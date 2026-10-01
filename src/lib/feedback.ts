@@ -48,6 +48,14 @@ export const feedback = {
   tap() {
     if (native) Haptics.selectionAsync();
   },
+  /** A row picked up to reorder. Passing over another slot uses `tap()`. */
+  lift() {
+    if (native) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  },
+  /** A dragged row settling into its new place. */
+  drop() {
+    if (native) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  },
   error() {
     if (native) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   },

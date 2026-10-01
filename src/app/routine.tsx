@@ -1,9 +1,10 @@
 import { router, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Row, Section } from '@/components/list';
+import { SortableList } from '@/components/sortable-list';
 import { Stepper } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
 import { Gutter, Spacing, textStyle } from '@/constants/theme';
@@ -15,6 +16,7 @@ import { MAX_SETS, MIN_SETS, routineActions, useWorkoutStore } from '@/lib/worko
 export default function RoutineScreen() {
   const theme = useTheme();
   const { draft, routines } = useWorkoutStore();
+  const [reordering, setReordering] = useState(false);
   const isNew = !routines.some((r) => r.id === draft?.id);
 
   // Saving, cancelling or deleting clears the draft; that's the signal to close.
@@ -30,6 +32,8 @@ export default function RoutineScreen() {
       <Stack.Screen
         options={{
           title: isNew ? 'New Template' : 'Edit Template',
+          // Dragging an exercise down shouldn't pull the sheet closed.
+          gestureEnabled: !reordering,
           headerLeft: () => (
             <Pressable onPress={routineActions.cancel} hitSlop={10} accessibilityRole="button" style={styles.headerButton}>
               <ThemedText style={{ color: theme.accent }}>Cancel</ThemedText>
@@ -53,7 +57,9 @@ export default function RoutineScreen() {
       <ScrollView
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        // An exercise is being dragged; the list shouldn't scroll out from under it.
+        scrollEnabled={!reordering}>
         <TextInput
           value={draft.name}
           onChangeText={routineActions.rename}
@@ -70,32 +76,42 @@ export default function RoutineScreen() {
           footer={
             draft.exercises.length === 0
               ? 'Add the exercises you do in this workout. Weights fill in from your last session.'
-              : 'Set how many sets each exercise gets. You can still add or remove sets during a workout.'
+              : 'Set how many sets each exercise gets. Hold an exercise and drag it to change the order.'
           }>
-          {draft.exercises.map((name) => (
-            <View key={name} style={styles.row}>
-              <Pressable
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${name}`}
-                onPress={() => routineActions.removeExercise(name)}>
-                <Icon name={{ ios: 'minus.circle.fill', md: 'do_not_disturb_on' }} size={22} color={theme.destructive} />
-              </Pressable>
-              <View style={styles.flex}>
-                <ThemedText numberOfLines={1}>{name}</ThemedText>
-                <ThemedText type="subheadline" themeColor="textSecondary" numeric>
-                  {draft.sets?.[name] ?? 3} {(draft.sets?.[name] ?? 3) === 1 ? 'set' : 'sets'}
-                </ThemedText>
-              </View>
-              <Stepper
-                value={draft.sets?.[name] ?? 3}
-                min={MIN_SETS}
-                max={MAX_SETS}
-                onChange={(count) => routineActions.setSetCount(name, count)}
-                label={`${name} sets`}
-              />
-            </View>
-          ))}
+          {draft.exercises.length > 0 && (
+            <SortableList
+              key="exercises"
+              items={draft.exercises}
+              keyOf={(name) => name}
+              labelOf={(name) => name}
+              onMove={routineActions.moveExercise}
+              onDragChange={setReordering}
+              renderItem={(name) => (
+                <View style={styles.row}>
+                  <Pressable
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${name}`}
+                    onPress={() => routineActions.removeExercise(name)}>
+                    <Icon name={{ ios: 'minus.circle.fill', md: 'do_not_disturb_on' }} size={22} color={theme.destructive} />
+                  </Pressable>
+                  <View style={styles.flex}>
+                    <ThemedText numberOfLines={1}>{name}</ThemedText>
+                    <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+                      {draft.sets?.[name] ?? 3} {(draft.sets?.[name] ?? 3) === 1 ? 'set' : 'sets'}
+                    </ThemedText>
+                  </View>
+                  <Stepper
+                    value={draft.sets?.[name] ?? 3}
+                    min={MIN_SETS}
+                    max={MAX_SETS}
+                    onChange={(count) => routineActions.setSetCount(name, count)}
+                    label={`${name} sets`}
+                  />
+                </View>
+              )}
+            />
+          )}
           <Row
             key="add"
             label="Add exercise"

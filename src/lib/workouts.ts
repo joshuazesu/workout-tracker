@@ -394,6 +394,14 @@ export const profileActions = {
   },
 };
 
+function moveItem<T>(list: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || from >= list.length) return list;
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(Math.max(0, Math.min(to, next.length)), 0, item);
+  return next;
+}
+
 export const routineActions = {
   /**
    * Opens a draft copy of a routine (or a blank one) for the routine screen to edit.
@@ -430,6 +438,14 @@ export const routineActions = {
       ...s,
       routines: s.routines.map((r) => (r.id === routineId ? { ...r, name: name.trim() || r.name } : r)),
     }));
+  },
+  /** Moves a saved template to a new place in the list (drag to reorder on Start). */
+  move(from: number, to: number) {
+    setState((s) => ({ ...s, routines: moveItem(s.routines, from, to) }));
+  },
+  /** Moves an exercise within the draft; a workout started from the template follows this order. */
+  moveExercise(from: number, to: number) {
+    updateDraft((r) => ({ ...r, exercises: moveItem(r.exercises, from, to) }));
   },
   rename(name: string) {
     updateDraft((r) => ({ ...r, name }));

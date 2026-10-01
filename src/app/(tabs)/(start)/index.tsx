@@ -9,6 +9,7 @@ import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
+import { SortableList } from '@/components/sortable-list';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -47,6 +48,7 @@ export default function StartScreen() {
   const now = useNow(60_000);
   const [menuFor, setMenuFor] = useState<Routine | null>(null);
   const [renaming, setRenaming] = useState<Routine | null>(null);
+  const [reordering, setReordering] = useState(false);
   const atLimit = routines.length >= MAX_ROUTINES;
   const collapse = useCollapsingTitle();
 
@@ -86,7 +88,9 @@ export default function StartScreen() {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         onScroll={collapse.onScroll}
-        scrollEventThrottle={16}>
+        scrollEventThrottle={16}
+        // A held template is being dragged; the list shouldn't scroll out from under it.
+        scrollEnabled={!reordering}>
         <ScreenHeader title="Today’s log" subtitle={todayLine(now)} collapse={collapse} />
 
         {active && <ResumeCard workout={active} />}
@@ -94,19 +98,29 @@ export default function StartScreen() {
         <ChallengeCard />
 
         <Section title="Templates" trailing={`${routines.length} of ${MAX_ROUTINES}`}>
-          {routines.map((r) => (
-            <SwipeAction key={r.id} label="Delete" onAction={() => deleteTemplate(r)} background={theme.background}>
-              <TemplateRow
-                routine={r}
-                setCount={r.exercises.reduce((n, name) => n + defaultSetCount(r, name, history), 0)}
-                highlighted={r.id === suggested?.id}
-                canStart={!active}
-                onStart={() => start(r.id)}
-                onMenu={() => setMenuFor(r)}
-                onDelete={() => deleteTemplate(r)}
-              />
-            </SwipeAction>
-          ))}
+          {routines.length > 0 && (
+            <SortableList
+              key="templates"
+              items={routines}
+              keyOf={(r) => r.id}
+              labelOf={(r) => r.name}
+              onMove={routineActions.move}
+              onDragChange={setReordering}
+              renderItem={(r) => (
+                <SwipeAction label="Delete" onAction={() => deleteTemplate(r)} background={theme.background}>
+                  <TemplateRow
+                    routine={r}
+                    setCount={r.exercises.reduce((n, name) => n + defaultSetCount(r, name, history), 0)}
+                    highlighted={r.id === suggested?.id}
+                    canStart={!active}
+                    onStart={() => start(r.id)}
+                    onMenu={() => setMenuFor(r)}
+                    onDelete={() => deleteTemplate(r)}
+                  />
+                </SwipeAction>
+              )}
+            />
+          )}
           <LinkRow
             key="new"
             label={atLimit ? `Limit of ${MAX_ROUTINES} reached` : 'New template'}
