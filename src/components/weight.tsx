@@ -13,23 +13,38 @@ import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
-import { profileActions, type WeightChange, weightChanges, type WeightEntry } from '@/lib/workouts';
+import { fromDisplayWeight, toDisplayWeight, weightUnit } from '@/lib/units';
+import {
+  type ChangeColor,
+  profileActions,
+  type Units,
+  useWorkoutStore,
+  type WeightChange,
+  weightChanges,
+  type WeightEntry,
+} from '@/lib/workouts';
 
 /** How long each weight change stays up before the next one fades in. */
 const ROTATE_MS = 5000;
 
-const changeLabel = ({ kg, since }: WeightChange) => {
-  const period = since === 'start' ? 'from starting weight' : `over last ${since} days`;
-  if (kg === 0) return `No change ${period}`;
-  return `${kg > 0 ? 'Up' : 'Down'} ${Math.abs(kg)} kg ${period}`;
+/** The change in the user's unit, rounded the way it's shown, so "0.0" counts as no change. */
+const shown = (change: WeightChange, units: Units) =>
+  Math.sign(change.kg) * toDisplayWeight(Math.abs(change.kg), units);
+
+const changeLabel = (change: WeightChange, units: Units) => {
+  const period = change.since === 'start' ? 'from starting weight' : `over last ${change.since} days`;
+  const value = shown(change, units);
+  if (value === 0) return `No change ${period}`;
+  return `${value > 0 ? 'Up' : 'Down'} ${Math.abs(value)} ${weightUnit(units)} ${period}`;
 };
 
 /**
  * "↓ Down 1.2 kg from starting weight", cycling through the last 7, 12 and 30 days every few
- * seconds. Tapping shows the next one. Losing weight is green and gaining red.
+ * seconds. Tapping shows the next one. Gains and losses take the colours picked in Settings.
  */
-export function WeightDelta({ weights }: { weights: WeightEntry[] }) {
+export function WeightDelta() {
   const theme = useTheme();
+  const { weights, units, weightColors } = useWorkoutStore();
   const now = useNow();
   const changes = weightChanges(weights, now);
   const [index, setIndex] = useState(0);
@@ -44,22 +59,24 @@ export function WeightDelta({ weights }: { weights: WeightEntry[] }) {
 
   if (count === 0) return null;
   const change = changes[index % count];
-  const color = change.kg > 0 ? theme.destructive : change.kg < 0 ? theme.positive : theme.textSecondary;
+  const value = shown(change, units);
+  const tone: Record<ChangeColor, string> = { green: theme.positive, red: theme.destructive, neutral: theme.text };
+  const color = value > 0 ? tone[weightColors.gain] : value < 0 ? tone[weightColors.loss] : theme.textSecondary;
 
   return (
     <Pressable
       onPress={() => count > 1 && setIndex((i) => (i + 1) % count)}
       accessibilityRole="text"
-      accessibilityLabel={changes.map(changeLabel).join('. ')}>
+      accessibilityLabel={changes.map((c) => changeLabel(c, units)).join('. ')}>
       <Animated.View
-        key={`${change.since}-${change.kg}`}
+        key={`${change.since}-${value}`}
         entering={FadeIn.duration(250).easing(EASE_OUT)}
         style={styles.delta}>
         <Icon
           name={
-            change.kg > 0
+            value > 0
               ? { ios: 'arrow.up', md: 'arrow_upward' }
-              : change.kg < 0
+              : value < 0
                 ? { ios: 'arrow.down', md: 'arrow_downward' }
                 : { ios: 'minus', md: 'remove' }
           }
@@ -68,7 +85,7 @@ export function WeightDelta({ weights }: { weights: WeightEntry[] }) {
           weight="bold"
         />
         <ThemedText type="subheadline" numeric style={[styles.deltaText, { color }]}>
-          {changeLabel(change)}
+          {changeLabel(change, units)}
         </ThemedText>
       </Animated.View>
     </Pressable>
@@ -81,18 +98,19 @@ const PLOT_PAD = 10;
 const AXIS_WIDTH = 40;
 
 /**
- * Body weight over time: a smooth line with a blue wash under it, three light rules with their kg,
+ * Body weight over time: a smooth line with a blue wash under it, three light rules with their values,
  * and the first and last dates underneath. Logging again on the same day replaces that day's reading.
  */
-export function WeightCard({ weights }: { weights: WeightEntry[] }) {
+export function WeightCard() {
   const theme = useTheme();
+  const { weights, units } = useWorkoutStore();
   const [logging, setLogging] = useState(false);
   const latest = weights.at(-1);
 
   const log = (text: string) => {
-    const kg = Number(text.replace(',', '.'));
-    if (!(kg > 0 && kg < 1000)) return;
-    profileActions.logWeight(Math.round(kg * 10) / 10);
+    const value = Number(text.replace(',', '.'));
+    if (!(value > 0 && value < 2000)) return;
+    profileActions.logWeight(fromDisplayWeight(value, units));
     feedback.tap();
   };
 
@@ -116,7 +134,7 @@ export function WeightCard({ weights }: { weights: WeightEntry[] }) {
         </View>
       ) : (
         <>
-          <WeightChart weights={weights} />
+          <WeightChart weights={weights} units={units} />
           {weights.length === 1 && (
             <ThemedText type="subheadline" themeColor="textSecondary">
               Log again on another day to start your line.
@@ -125,8 +143,8 @@ export function WeightCard({ weights }: { weights: WeightEntry[] }) {
         </>
       )}
       <PromptDialog
-        title="Today’s weight (kg)"
-        initialValue={latest ? String(latest.kg) : ''}
+        title={`Today’s weight (${weightUnit(units)})`}
+        initialValue={latest ? String(toDisplayWeight(latest.kg, units)) : ''}
         placeholder="0"
         keyboardType="decimal-pad"
         visible={logging}
@@ -137,15 +155,17 @@ export function WeightCard({ weights }: { weights: WeightEntry[] }) {
   );
 }
 
-function WeightChart({ weights }: { weights: WeightEntry[] }) {
+function WeightChart({ weights, units }: { weights: WeightEntry[]; units: Units }) {
   const theme = useTheme();
   const [width, setWidth] = useState(0);
   const plotWidth = Math.max(0, width - AXIS_WIDTH);
+  const unit = weightUnit(units);
 
-  const kgs = weights.map((w) => w.kg);
-  const lo = Math.min(...kgs);
-  const hi = Math.max(...kgs);
-  // A little headroom, and at least ±1 kg so a flat week doesn't look like a cliff.
+  // Everything below is in the user's unit, so the axis reads in round kg or lb.
+  const values = weights.map((w) => toDisplayWeight(w.kg, units));
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  // A little headroom, and at least ±1 so a flat week doesn't look like a cliff.
   const pad = Math.max(1, (hi - lo) * 0.15);
   const min = Math.floor(lo - pad);
   const max = Math.ceil(hi + pad);
@@ -154,10 +174,10 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
 
   const plotTop = PLOT_PAD;
   const plotBottom = CHART_HEIGHT - PLOT_PAD;
-  const toY = (kg: number) => plotBottom - ((kg - min) / (max - min)) * (plotBottom - plotTop);
+  const toY = (value: number) => plotBottom - ((value - min) / (max - min)) * (plotBottom - plotTop);
   // Spaced by date, not by entry, so a gap in logging shows as a gap. Inset so the end dot fits.
   const toX = (day: number) => (span === 0 ? plotWidth / 2 : 6 + ((day - first) / span) * (plotWidth - 12));
-  const points = weights.map((w) => ({ x: toX(w.day), y: toY(w.kg) }));
+  const points = weights.map((w, i) => ({ x: toX(w.day), y: toY(values[i]) }));
   const line = smoothPath(points);
   const end = points.at(-1)!;
   const area = points.length > 1 ? `${line} L${end.x},${plotBottom} L${points[0].x},${plotBottom} Z` : '';
@@ -167,7 +187,7 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
   return (
     <View
       accessible
-      accessibilityLabel={`Weight chart. ${weights.length} readings from ${date(first)}, ${weights[0].kg} kg, to ${date(weights.at(-1)!.day)}, ${weights.at(-1)!.kg} kg.`}>
+      accessibilityLabel={`Weight chart. ${weights.length} readings from ${date(first)}, ${values[0]} ${unit}, to ${date(weights.at(-1)!.day)}, ${values.at(-1)} ${unit}.`}>
       <View style={{ height: CHART_HEIGHT }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
         {plotWidth > 0 && (
           <Svg width={width} height={CHART_HEIGHT}>
@@ -177,13 +197,13 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
                 <Stop offset="1" stopColor={theme.accent} stopOpacity={0} />
               </LinearGradient>
             </Defs>
-            {ticks.map((kg) => (
+            {ticks.map((value) => (
               <Line
-                key={kg}
+                key={value}
                 x1={0}
                 x2={plotWidth}
-                y1={toY(kg)}
-                y2={toY(kg)}
+                y1={toY(value)}
+                y2={toY(value)}
                 stroke={theme.separator}
                 strokeWidth={1}
               />
@@ -195,14 +215,14 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
             <Circle cx={end.x} cy={end.y} r={5} fill={theme.accent} stroke={theme.background} strokeWidth={2} />
           </Svg>
         )}
-        {ticks.map((kg) => (
+        {ticks.map((value) => (
           <ThemedText
-            key={kg}
+            key={value}
             type="footnote"
             themeColor="textSecondary"
             numeric
-            style={[styles.tick, { top: toY(kg) - 9 }]}>
-            {Number.isInteger(kg) ? kg : kg.toFixed(1)}
+            style={[styles.tick, { top: toY(value) - 9 }]}>
+            {Number.isInteger(value) ? value : value.toFixed(1)}
           </ThemedText>
         ))}
       </View>

@@ -45,6 +45,12 @@ export type Routine = {
 
 export type Appearance = 'system' | 'light' | 'dark';
 
+/** How body height and weight are shown and entered. They're always stored in cm and kg. */
+export type Units = 'metric' | 'imperial';
+
+/** The colour a body-weight change is shown in, chosen separately for gains and losses. */
+export type ChangeColor = 'green' | 'red' | 'neutral';
+
 export const MIN_SETS = 1;
 export const MAX_SETS = 10;
 
@@ -85,6 +91,8 @@ type State = {
   restSeconds: number;
   /** Light or dark mode, or follow the phone. */
   appearance: Appearance;
+  units: Units;
+  weightColors: { gain: ChangeColor; loss: ChangeColor };
 };
 
 /** Work out on `days` different days within `windowDays` of starting. */
@@ -143,16 +151,20 @@ const initialState = (): State => ({
   trophies: [],
   restSeconds: 90,
   appearance: 'system',
+  units: 'metric',
+  weightColors: { gain: 'red', loss: 'green' },
 });
 
 function load(): State {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const saved = { ...initialState(), ...(JSON.parse(raw) as Partial<State>) };
+      const parsed = JSON.parse(raw) as Partial<State>;
+      const saved = { ...initialState(), ...parsed };
       // Before the weight log, the profile weight was the only reading; it becomes the first entry.
+      // Only once: after a reset the log is empty on purpose.
       const kg = Number(saved.profile.weightKg);
-      if (saved.weights.length === 0 && kg > 0) saved.weights = [{ day: startOfDay(Date.now()), kg }];
+      if (!parsed.weights && kg > 0) saved.weights = [{ day: startOfDay(Date.now()), kg }];
       return saved;
     }
     // v1 only had { active, history }; keep those and fill in the rest.
@@ -391,9 +403,20 @@ export const workoutActions = {
   deleteFromHistory(workoutId: string) {
     setState((s) => ({ ...s, history: s.history.filter((w) => w.id !== workoutId) }));
   },
-  /** Wipes workouts, the challenge and trophies. Keeps the profile and templates. */
+  /**
+   * Wipes workouts, the challenge, trophies and the weight log (and so the current weight, which
+   * mirrors it). Keeps the rest of the profile and the templates.
+   */
   resetHistory() {
-    setState((s) => ({ ...s, active: null, history: [], challenge: null, trophies: [] }));
+    setState((s) => ({
+      ...s,
+      active: null,
+      history: [],
+      challenge: null,
+      trophies: [],
+      weights: [],
+      profile: { ...s.profile, weightKg: '' },
+    }));
   },
 };
 
@@ -404,12 +427,21 @@ export const profileActions = {
   setAppearance(appearance: Appearance) {
     setState((s) => ({ ...s, appearance }));
   },
+  setUnits(units: Units) {
+    setState((s) => ({ ...s, units }));
+  },
+  setWeightColor(direction: 'gain' | 'loss', color: ChangeColor) {
+    setState((s) => ({ ...s, weightColors: { ...s.weightColors, [direction]: color } }));
+  },
   /** Records today's body weight, replacing an earlier reading from today. Ignores non-positive values. */
   logWeight(kg: number) {
     if (!(kg > 0)) return;
     setState((s) => ({ ...s, weights: withToday(s.weights, kg), profile: { ...s.profile, weightKg: String(kg) } }));
   },
-  /** The Settings weight field: keeps the text as typed, and logs it as today's reading once it's a number. */
+  /**
+   * The Settings weight field: keeps the text as typed, and logs it as today's reading once it's a
+   * number. The text is in kg; the field converts pounds before calling this.
+   */
   editWeight(text: string) {
     const kg = Number(text);
     setState((s) => ({
@@ -426,7 +458,7 @@ function withToday(weights: WeightEntry[], kg: number): WeightEntry[] {
   return [...weights.filter((w) => w.day !== day), { day, kg }];
 }
 
-/** The newest reading compared with an older one: from the first ever, or from `days` ago. */
+/** The newest reading minus an older one, in kg (unrounded): from the first ever, or from `days` ago. */
 export type WeightChange = { kg: number; since: 'start' | number };
 
 /**
@@ -437,13 +469,12 @@ export type WeightChange = { kg: number; since: 'start' | number };
 export function weightChanges(weights: WeightEntry[], now = Date.now()): WeightChange[] {
   const latest = weights.at(-1);
   if (!latest || weights.length < 2) return [];
-  const round = (kg: number) => Math.round(kg * 10) / 10;
-  const changes: WeightChange[] = [{ kg: round(latest.kg - weights[0].kg), since: 'start' }];
+  const changes: WeightChange[] = [{ kg: latest.kg - weights[0].kg, since: 'start' }];
   for (const days of [7, 12, 30]) {
     const cutoff = new Date(startOfDay(now));
     cutoff.setDate(cutoff.getDate() - days);
     const before = weights.findLast((w) => w.day <= cutoff.getTime());
-    if (before && before !== latest) changes.push({ kg: round(latest.kg - before.kg), since: days });
+    if (before && before !== latest) changes.push({ kg: latest.kg - before.kg, since: days });
   }
   return changes;
 }

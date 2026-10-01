@@ -13,16 +13,14 @@ import { WeightCard, WeightDelta } from '@/components/weight';
 import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
+import { formatBodyWeight, formatHeight } from '@/lib/units';
 import { CHALLENGES, challengeProgress, useWorkoutStore, weekStreak } from '@/lib/workouts';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { profile, weights, history, trophies, challenge } = useWorkoutStore();
+  const { profile, units, history, trophies, challenge } = useWorkoutStore();
   const now = useNow();
-  const details = [
-    profile.heightCm && `${profile.heightCm} cm`,
-    profile.weightKg && `${profile.weightKg} kg`,
-  ].filter(Boolean);
+  const details = [formatHeight(profile.heightCm, units), formatBodyWeight(profile.weightKg, units)].filter(Boolean);
   const openSettings = () => router.push('/profile/settings');
   const streak = weekStreak(history, now);
   // The trophy being worked towards, shown as a dashed "still to win" card.
@@ -54,7 +52,7 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
           }>
-          <WeightDelta weights={weights} />
+          <WeightDelta />
         </ScreenHeader>
         {!profile.name && (
           <Button label="Add your name" variant="tinted" size="small" onPress={openSettings} style={styles.addName} />
@@ -65,7 +63,7 @@ export default function ProfileScreen() {
           <Total label="Week streak" value={String(streak)} accent={streak > 0} />
         </Section>
 
-        <WeightCard weights={weights} />
+        <WeightCard />
 
         <ConsistencyCard />
 
