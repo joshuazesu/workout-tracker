@@ -91,6 +91,7 @@ Set `weight`/`reps` are stored as strings so they're friendly to text inputs, an
 - `.impeccable/` holds design-workflow artifacts (critique snapshots, the surface brief, `design.json`); it isn't app code.
 - `src/hooks/use-color-scheme.web.ts` uses `useSyncExternalStore` for hydration-safe web rendering. Don't revert it to the `useEffect`+`setState` pattern, because the `react-hooks/set-state-in-effect` lint rule rejects it.
 - On web, native tabs render as a bar across the top, so `ScreenHeader` adds 64 px of top padding there.
+- Tab roots have no native header (the root stack hides it for `(tabs)` in both `screenOptions` and the screen, so "(tabs)" never shows). Start, History and Profile instead use `useCollapsingTitle()` + `CompactTitle` (`components/screen-header.tsx`): pass `collapse` to `ScreenHeader` and `onScroll` to an Animated scroll view, and a slim bar with the screen name fades in (150 ms) only once the big title has scrolled under it. Exercises keeps its header fixed above the list, so it doesn't need one.
 
 **Platform conventions:**
 - `src/lib/confirm.ts` wraps destructive confirmations, because `Alert.alert` buttons don't work on web.

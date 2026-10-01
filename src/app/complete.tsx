@@ -94,9 +94,10 @@ export default function CompleteScreen() {
                 <Stat
                   label="Duration"
                   value={formatMinutes((workout.endedAt ?? workout.startedAt) - workout.startedAt)}
+                  align="center"
                 />
-                <Stat label="Volume" value={`${volume.toLocaleString()} kg`} />
-                <Stat label="Sets" value={String(sets)} />
+                <Stat label="Volume" value={`${volume.toLocaleString()} kg`} align="center" />
+                <Stat label="Sets" value={String(sets)} align="center" />
               </View>
               {previous && volumeDelta !== 0 && (
                 <>

@@ -79,12 +79,17 @@ export default function RootLayout() {
       <ThemeProvider value={navTheme}>
         <AnimatedSplashOverlay />
         <StatusBar style={dark ? "light" : "dark"} />
-        <Stack screenOptions={headerOptions}>
+        {/* The tab group never gets a root header (it would read "(tabs)"): tab screens draw their own
+            ScreenHeader and CompactTitle. Set here as well as on the screen so it can't be missed. */}
+        <Stack
+          screenOptions={({ route }) =>
+            route.name === '(tabs)' ? { ...headerOptions, headerShown: false, title: '' } : headerOptions
+          }>
           <Stack.Protected guard={!onboarded}>
             <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           </Stack.Protected>
           <Stack.Protected guard={onboarded}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '' }} />
             <Stack.Screen name="workout" options={{ title: 'Workout', headerBackTitle: 'Back' }} />
             <Stack.Screen
               name="add-exercise"

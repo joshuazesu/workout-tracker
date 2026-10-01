@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { ChallengeCard } from '@/components/cards';
 import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
-import { ScreenHeader } from '@/components/screen-header';
+import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
@@ -47,6 +48,7 @@ export default function StartScreen() {
   const [menuFor, setMenuFor] = useState<Routine | null>(null);
   const [renaming, setRenaming] = useState<Routine | null>(null);
   const atLimit = routines.length >= MAX_ROUTINES;
+  const collapse = useCollapsingTitle();
 
   // Suggest the template it's been longest since (or one never done): the next in the rotation.
   const lastDone = (r: Routine) => history.find((w) => w.name === r.name)?.startedAt ?? 0;
@@ -80,8 +82,12 @@ export default function StartScreen() {
 
   return (
     <>
-      <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content}>
-        <ScreenHeader title="Today’s log" subtitle={todayLine(now)} />
+      <Animated.ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentContainerStyle={styles.content}
+        onScroll={collapse.onScroll}
+        scrollEventThrottle={16}>
+        <ScreenHeader title="Today’s log" subtitle={todayLine(now)} collapse={collapse} />
 
         {active && <ResumeCard workout={active} />}
 
@@ -114,7 +120,8 @@ export default function StartScreen() {
             Templates are workouts you repeat, like “Push Day”. Create one to start it in a tap.
           </ThemedText>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
+      <CompactTitle title="Today’s log" collapse={collapse} />
 
       <ActionMenu title={menuFor?.name} options={menuFor ? menuOptions(menuFor) : null} onClose={() => setMenuFor(null)} />
       <PromptDialog
