@@ -4,7 +4,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } f
 
 import { Avatar } from '@/components/avatar';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
@@ -51,12 +51,12 @@ export default function SettingsScreen() {
       keyboardShouldPersistTaps="handled">
       <Pressable onPress={pickPhoto} style={styles.photo} accessibilityLabel="Change profile photo">
         <Avatar profile={profile} size={96} />
-        <ThemedText style={{ color: theme.accent, fontWeight: 700 }}>
-          {profile.photoUri ? 'Change photo' : 'Add photo'}
+        <ThemedText type="subheadline" style={{ color: theme.accent, fontWeight: 600 }}>
+          {profile.photoUri ? 'Change Photo' : 'Add Photo'}
         </ThemedText>
       </Pressable>
 
-      <View style={[styles.group, { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.group, { backgroundColor: theme.surface }]}>
         <Field label="Name">
           <TextInput
             value={profile.name}
@@ -94,8 +94,8 @@ export default function SettingsScreen() {
         </Field>
       </View>
 
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.groupLabel}>
-        DATA
+      <ThemedText type="title3" style={styles.groupTitle} accessibilityRole="header">
+        Data
       </ThemedText>
       <Pressable
         onPress={() =>
@@ -109,10 +109,11 @@ export default function SettingsScreen() {
             }
           )
         }
-        style={({ pressed }) => [styles.group, styles.danger, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
-        <ThemedText style={styles.dangerText}>Reset tracking history</ThemedText>
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.group, styles.danger, { backgroundColor: pressed ? theme.fillStrong : theme.surface }]}>
+        <ThemedText style={{ color: theme.destructive }}>Reset Tracking History</ThemedText>
       </Pressable>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.groupLabel}>
+      <ThemedText type="footnote" themeColor="textSecondary" style={styles.groupLabel}>
         Start fresh. Deletes every workout, challenge and trophy. This can’t be undone.
       </ThemedText>
     </ScrollView>
@@ -130,7 +131,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Divider() {
   const theme = useTheme();
-  return <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />;
+  return <View style={[styles.divider, { backgroundColor: theme.separator }]} />;
 }
 
 const styles = StyleSheet.create({
@@ -147,38 +148,39 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   group: {
-    borderRadius: 16,
+    borderRadius: Radius,
     paddingHorizontal: Spacing.three,
     borderCurve: 'continuous',
   },
   groupLabel: {
     paddingHorizontal: Spacing.three,
-    marginTop: Spacing.two,
+  },
+  groupTitle: {
+    fontWeight: 700,
+    paddingHorizontal: Spacing.one,
+    marginTop: Spacing.three,
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    minHeight: 52,
+    minHeight: 44,
   },
   fieldLabel: {
     width: 72,
-    fontWeight: 600,
   },
   input: {
+    ...TextStyles.body,
     flex: 1,
-    fontSize: 16,
-    paddingVertical: Spacing.three,
+    minWidth: 0,
+    paddingVertical: 11,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
   },
   danger: {
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-  },
-  dangerText: {
-    color: '#E5484D',
-    fontWeight: 700,
+    paddingVertical: 11,
+    minHeight: 44,
+    justifyContent: 'center',
   },
 });

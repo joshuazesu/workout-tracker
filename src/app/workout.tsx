@@ -2,9 +2,11 @@ import { router, Stack } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { ExerciseCard } from '@/components/exercise-card';
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing, TextStyles } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
@@ -13,7 +15,6 @@ import { formatDuration, workoutActions, workoutVolume, useWorkoutStore } from '
 export default function WorkoutScreen() {
   const theme = useTheme();
   const { active } = useWorkoutStore();
-  const now = useNow(1000);
   // Set when finishing, so the celebration screen replaces this one instead of popping home.
   const finishing = useRef(false);
 
@@ -25,6 +26,7 @@ export default function WorkoutScreen() {
   if (!active) return null;
 
   const completedSets = active.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
+  const volume = Math.round(workoutVolume(active));
 
   const finish = () => {
     if (completedSets === 0) {
@@ -41,14 +43,20 @@ export default function WorkoutScreen() {
     if (id) router.replace({ pathname: '/complete', params: { id } });
   };
 
+  const discard = () =>
+    confirm('Discard workout', 'All sets in this workout will be lost.', 'Discard', workoutActions.discard);
+
   return (
     <>
       <Stack.Screen
         options={{
-          title: active.name || 'Workout',
+          // The live timer is the title; the name is edited in the body.
+          headerTitle: () => <Elapsed startedAt={active.startedAt} />,
           headerRight: () => (
-            <Pressable onPress={finish} hitSlop={10} style={styles.finishButton}>
-              <ThemedText style={[styles.finishText, { color: theme.accent }]}>Finish</ThemedText>
+            <Pressable onPress={finish} hitSlop={10} accessibilityRole="button" style={styles.finishButton}>
+              <ThemedText type="headline" style={{ color: theme.accent }}>
+                Finish
+              </ThemedText>
             </Pressable>
           ),
         }}
@@ -62,26 +70,31 @@ export default function WorkoutScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentContainerStyle={styles.content}>
-          <TextInput
-            value={active.name ?? ''}
-            onChangeText={workoutActions.rename}
-            placeholder="Name this workout"
-            placeholderTextColor={theme.textSecondary}
-            returnKeyType="done"
-            accessibilityLabel="Workout name"
-            style={[styles.nameInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
-          <View style={styles.stats}>
-            <Stat label="Duration" value={formatDuration(now - active.startedAt)} />
-            <Stat label="Volume" value={`${Math.round(workoutVolume(active)).toLocaleString()} kg`} />
-            <Stat label="Sets" value={String(completedSets)} />
+          <View style={styles.titleBlock}>
+            <TextInput
+              value={active.name ?? ''}
+              onChangeText={workoutActions.rename}
+              placeholder="Workout"
+              placeholderTextColor={theme.textSecondary}
+              returnKeyType="done"
+              accessibilityLabel="Workout name"
+              style={[styles.nameInput, { color: theme.text }]}
+            />
+            {completedSets > 0 && (
+              <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+                {completedSets} {completedSets === 1 ? 'set' : 'sets'} · {volume.toLocaleString()} kg
+              </ThemedText>
+            )}
           </View>
 
           {active.exercises.length === 0 && (
             <View style={styles.empty}>
-              <ThemedText style={styles.emptyTitle}>Get started</ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                Add an exercise, then log each set’s weight and reps and tick it off.
+              <Icon name={{ ios: 'dumbbell', md: 'fitness_center' }} size={40} color={theme.textSecondary} />
+              <ThemedText type="title3" style={styles.emptyTitle}>
+                Add your first exercise
+              </ThemedText>
+              <ThemedText type="subheadline" themeColor="textSecondary" style={styles.center}>
+                Log each set’s weight and reps, then tick it off.
               </ThemedText>
             </View>
           )}
@@ -90,38 +103,28 @@ export default function WorkoutScreen() {
             <ExerciseCard key={exercise.id} exercise={exercise} />
           ))}
 
-          <Pressable
-            onPress={() => router.push('/add-exercise')}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
-            ]}>
-            <ThemedText style={[styles.primaryText, { color: theme.onAccent }]}>
-              + Add exercise
-            </ThemedText>
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              confirm('Discard workout', 'All sets in this workout will be lost.', 'Discard', workoutActions.discard)
-            }
-            style={({ pressed }) => [styles.discardButton, { opacity: pressed ? 0.6 : 1 }]}>
-            <ThemedText style={styles.discardText}>Discard workout</ThemedText>
-          </Pressable>
+          <View style={styles.actions}>
+            <Button
+              label="Add Exercise"
+              variant={active.exercises.length === 0 ? 'primary' : 'tinted'}
+              icon={{ ios: 'plus', md: 'add' }}
+              onPress={() => router.push('/add-exercise')}
+            />
+            {completedSets > 0 && <Button label="Finish Workout" onPress={finish} />}
+            <Button label="Discard Workout" variant="destructive" onPress={discard} />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Elapsed({ startedAt }: { startedAt: number }) {
+  const now = useNow(1000);
   return (
-    <View style={styles.stat}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText style={styles.statValue}>{value}</ThemedText>
-    </View>
+    <ThemedText type="headline" numeric accessibilityLabel={`Elapsed ${formatDuration(now - startedAt)}`}>
+      {formatDuration(now - startedAt)}
+    </ThemedText>
   );
 }
 
@@ -136,62 +139,36 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  titleBlock: {
+    paddingHorizontal: Spacing.one,
+    gap: 2,
+  },
   nameInput: {
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: Spacing.three,
-    fontSize: 18,
-    fontWeight: 700,
+    ...TextStyles.title1,
+    paddingVertical: 0,
+    // Web inputs have an intrinsic width and won't shrink to fit without this.
+    minWidth: 0,
   },
   finishButton: {
     paddingHorizontal: Spacing.two,
-  },
-  finishText: {
-    fontWeight: 700,
-  },
-  stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.two,
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    fontVariant: ['tabular-nums'],
+    minHeight: 44,
+    justifyContent: 'center',
   },
   empty: {
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: Spacing.two,
     paddingVertical: Spacing.five,
     paddingHorizontal: Spacing.four,
   },
   emptyTitle: {
-    fontSize: 20,
     fontWeight: 700,
+    marginTop: Spacing.one,
   },
-  emptyText: {
+  center: {
     textAlign: 'center',
   },
-  primaryButton: {
-    borderRadius: 14,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    borderCurve: 'continuous',
-  },
-  primaryText: {
-    fontSize: 16,
-    fontWeight: 700,
-  },
-  discardButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-  },
-  discardText: {
-    color: '#E5484D',
-    fontWeight: 600,
+  actions: {
+    gap: Spacing.two,
+    marginTop: Spacing.two,
   },
 });

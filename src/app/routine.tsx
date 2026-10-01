@@ -2,9 +2,10 @@ import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Button } from '@/components/button';
+import { Icon } from '@/components/icon';
+import { Row, RowIconInset, Section } from '@/components/list';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { routineActions, useWorkoutStore } from '@/lib/workouts';
@@ -21,6 +22,7 @@ export default function RoutineScreen() {
   }, [draft]);
 
   if (!draft) return null;
+  const canSave = draft.exercises.length > 0;
 
   return (
     <>
@@ -28,21 +30,19 @@ export default function RoutineScreen() {
         options={{
           title: isNew ? 'New Template' : 'Edit Template',
           headerLeft: () => (
-            <Pressable onPress={routineActions.cancel} hitSlop={10} style={styles.headerButton}>
-              <ThemedText themeColor="textSecondary">Cancel</ThemedText>
+            <Pressable onPress={routineActions.cancel} hitSlop={10} accessibilityRole="button" style={styles.headerButton}>
+              <ThemedText style={{ color: theme.accent }}>Cancel</ThemedText>
             </Pressable>
           ),
           headerRight: () => (
             <Pressable
               onPress={routineActions.save}
-              disabled={draft.exercises.length === 0}
+              disabled={!canSave}
               hitSlop={10}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canSave }}
               style={styles.headerButton}>
-              <ThemedText
-                style={{
-                  color: draft.exercises.length ? theme.accent : theme.textSecondary,
-                  fontWeight: 700,
-                }}>
+              <ThemedText type="headline" style={{ color: canSave ? theme.accent : theme.textSecondary }}>
                 Save
               </ThemedText>
             </Pressable>
@@ -60,48 +60,53 @@ export default function RoutineScreen() {
           placeholderTextColor={theme.textSecondary}
           autoFocus={isNew}
           returnKeyType="done"
-          style={[styles.name, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+          accessibilityLabel="Template name"
+          style={[styles.name, { color: theme.text, backgroundColor: theme.surface }]}
         />
 
-        <ThemedText type="smallBold" themeColor="textSecondary">
-          EXERCISES
-        </ThemedText>
-        {draft.exercises.length === 0 && (
-          <ThemedText themeColor="textSecondary">Add the exercises you do in this workout. Sets and weights fill in from your last session.</ThemedText>
-        )}
-        {draft.exercises.map((name, i) => (
-          <View key={name} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText themeColor="textSecondary" style={styles.index}>
-              {i + 1}
-            </ThemedText>
-            <ThemedText style={styles.flex} numberOfLines={1}>
-              {name}
-            </ThemedText>
-            <Pressable
-              hitSlop={10}
-              accessibilityLabel={`Remove ${name}`}
-              onPress={() => routineActions.removeExercise(name)}>
-              <ThemedText themeColor="textSecondary">✕</ThemedText>
-            </Pressable>
-          </View>
-        ))}
-
-        <Button
-          label="+ Add exercise"
-          variant="secondary"
-          onPress={() => router.push({ pathname: '/add-exercise', params: { target: 'routine' } })}
-        />
+        <Section
+          title="Exercises"
+          footer={
+            draft.exercises.length === 0
+              ? 'Add the exercises you do in this workout. Sets and weights fill in from your last session.'
+              : undefined
+          }
+          inset={RowIconInset}>
+          {draft.exercises.map((name) => (
+            <View key={name} style={styles.row}>
+              <Pressable
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${name}`}
+                onPress={() => routineActions.removeExercise(name)}>
+                <Icon name={{ ios: 'minus.circle.fill', md: 'do_not_disturb_on' }} size={22} color={theme.destructive} />
+              </Pressable>
+              <ThemedText style={styles.flex} numberOfLines={1}>
+                {name}
+              </ThemedText>
+            </View>
+          ))}
+          <Row
+            key="add"
+            label="Add Exercise"
+            icon={{ ios: 'plus.circle.fill', md: 'add_circle' }}
+            color={theme.accent}
+            onPress={() => router.push({ pathname: '/add-exercise', params: { target: 'routine' } })}
+          />
+        </Section>
 
         {!isNew && (
-          <Pressable
-            onPress={() =>
-              confirm('Delete template', `Delete “${draft.name}”? Your logged history is kept.`, 'Delete', () =>
-                routineActions.delete(draft.id)
-              )
-            }
-            style={({ pressed }) => [styles.delete, { opacity: pressed ? 0.6 : 1 }]}>
-            <ThemedText style={styles.deleteText}>Delete template</ThemedText>
-          </Pressable>
+          <Section>
+            <Row
+              label="Delete Template"
+              color={theme.destructive}
+              onPress={() =>
+                confirm('Delete template', `Delete “${draft.name}”? Your logged history is kept.`, 'Delete', () =>
+                  routineActions.delete(draft.id)
+                )
+              }
+            />
+          </Section>
         )}
       </ScrollView>
     </>
@@ -114,38 +119,27 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    gap: Spacing.two,
+    gap: Spacing.four,
   },
   headerButton: {
     paddingHorizontal: Spacing.two,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   name: {
-    height: 52,
-    borderRadius: 14,
+    ...TextStyles.headline,
+    minHeight: 50,
+    borderRadius: Radius,
+    borderCurve: 'continuous',
     paddingHorizontal: Spacing.three,
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: Spacing.three,
+    minWidth: 0,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: 14,
+    gap: Spacing.three - 4,
+    minHeight: 44,
+    paddingVertical: 11,
     paddingHorizontal: Spacing.three,
-    borderRadius: 14,
-    borderCurve: 'continuous',
-  },
-  index: {
-    width: 18,
-    fontVariant: ['tabular-nums'],
-  },
-  delete: {
-    alignItems: 'center',
-    paddingVertical: Spacing.three,
-  },
-  deleteText: {
-    color: '#E5484D',
-    fontWeight: 600,
   },
 });

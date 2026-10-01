@@ -4,6 +4,8 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 
 import { Button } from '@/components/button';
 import { ChallengeCard } from '@/components/cards';
+import { Icon } from '@/components/icon';
+import { Row, RowIconInset, Section } from '@/components/list';
 import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -17,6 +19,7 @@ import {
   type Routine,
   routineActions,
   useWorkoutStore,
+  type Workout,
   workoutActions,
 } from '@/lib/workouts';
 
@@ -46,7 +49,7 @@ export default function StartScreen() {
 
   const menuOptions = (r: Routine): MenuOption[] => [
     { label: 'Rename', onPress: () => setRenaming(r) },
-    { label: 'Edit exercises', onPress: () => edit(r.id) },
+    { label: 'Edit Exercises', onPress: () => edit(r.id) },
     { label: 'Duplicate', onPress: () => routineActions.duplicate(r.id) || limitReached() },
     {
       label: 'Delete',
@@ -64,56 +67,53 @@ export default function StartScreen() {
         contentInsetAdjustmentBehavior="automatic"
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}>
-        {active && (
-          <Pressable
-            onPress={() => router.push('/workout')}
-            style={({ pressed }) => [styles.resume, { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 }]}>
-            <ThemedText style={[styles.resumeText, { color: theme.onAccent }]}>
-              Resume {active.name || 'workout'}
-            </ThemedText>
-            <Elapsed startedAt={active.startedAt} color={theme.onAccent} />
-          </Pressable>
-        )}
+        {active && <ResumeCard workout={active} />}
 
         <ChallengeCard />
 
-        <View style={styles.sectionHeader}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            MY TEMPLATES
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {routines.length} of {MAX_ROUTINES}
-          </ThemedText>
-        </View>
-
+        <Section title="Templates" trailing={`${routines.length} of ${MAX_ROUTINES}`}>
+          {routines.map((r) => (
+            <TemplateRow
+              key={r.id}
+              routine={r}
+              canStart={!active}
+              onStart={() => start(r.id)}
+              onMenu={() => setMenuFor(r)}
+            />
+          ))}
+          <Row
+            key="new"
+            label={atLimit ? `Limit of ${MAX_ROUTINES} reached` : 'New Template'}
+            icon={{ ios: 'plus.circle.fill', md: 'add_circle' }}
+            iconColor={atLimit ? theme.textSecondary : theme.accent}
+            color={atLimit ? theme.textSecondary : theme.accent}
+            onPress={() => edit()}
+          />
+        </Section>
         {routines.length === 0 && (
-          <ThemedText themeColor="textSecondary">
-            Templates are workouts you do often, like “Push Day”. Create one to start it in a tap.
+          <ThemedText type="footnote" themeColor="textSecondary" style={styles.hint}>
+            Templates are workouts you repeat, like “Push Day”. Create one to start it in a tap.
           </ThemedText>
         )}
 
-        {routines.map((r) => (
-          <TemplateCard
-            key={r.id}
-            routine={r}
-            disabled={Boolean(active)}
-            onStart={() => start(r.id)}
-            onMenu={() => setMenuFor(r)}
-          />
-        ))}
-
-        <Button
-          label={atLimit ? `Template limit reached (${MAX_ROUTINES})` : '+ Template'}
-          variant="secondary"
-          onPress={() => edit()}
-          style={atLimit ? styles.dimmed : undefined}
-        />
-        {!active && <Button label="Start an empty workout" variant="plain" onPress={() => start()} />}
+        {!active && (
+          <Section inset={RowIconInset}>
+            <Row
+              label="Start Empty Workout"
+              detail="Add exercises as you go"
+              icon={{ ios: 'square.and.pencil', md: 'edit_square' }}
+              // A navigation row, not a primary action, so the tint stays rationed to the Start buttons.
+              iconColor={theme.textSecondary}
+              onPress={() => start()}
+              chevron
+            />
+          </Section>
+        )}
       </ScrollView>
 
       <ActionMenu title={menuFor?.name} options={menuFor ? menuOptions(menuFor) : null} onClose={() => setMenuFor(null)} />
       <PromptDialog
-        title="Rename template"
+        title="Rename Template"
         visible={renaming !== null}
         initialValue={renaming?.name ?? ''}
         onSubmit={(name) => renaming && routineActions.renameSaved(renaming.id, name)}
@@ -123,110 +123,108 @@ export default function StartScreen() {
   );
 }
 
-function TemplateCard({
+/** The workout in progress. While one runs, this is the only filled button on the screen. */
+function ResumeCard({ workout }: { workout: Workout }) {
+  const now = useNow(1000);
+  const sets = workout.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
+  return (
+    <Section title="In Progress" padded>
+      <View style={styles.resumeRow}>
+        <View style={styles.flex}>
+          <ThemedText type="headline" numberOfLines={1}>
+            {workout.name || 'Workout'}
+          </ThemedText>
+          <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+            {sets} {sets === 1 ? 'set' : 'sets'} done
+          </ThemedText>
+        </View>
+        <ThemedText type="title2" numeric accessibilityLabel={`Elapsed ${formatDuration(now - workout.startedAt)}`}>
+          {formatDuration(now - workout.startedAt)}
+        </ThemedText>
+      </View>
+      <Button label="Resume Workout" icon={{ ios: 'play.fill', md: 'play_arrow' }} onPress={() => router.push('/workout')} />
+    </Section>
+  );
+}
+
+function TemplateRow({
   routine,
-  disabled,
+  canStart,
   onStart,
   onMenu,
 }: {
   routine: Routine;
-  disabled: boolean;
+  canStart: boolean;
   onStart: () => void;
   onMenu: () => void;
 }) {
   const theme = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-      <View style={styles.cardHeader}>
-        <ThemedText style={styles.cardTitle} numberOfLines={1}>
+    <View style={styles.template}>
+      <View style={styles.flex}>
+        <ThemedText type="headline" numberOfLines={1}>
           {routine.name}
         </ThemedText>
-        <Pressable
-          onPress={onMenu}
-          hitSlop={12}
-          accessibilityLabel={`${routine.name} options`}
-          style={({ pressed }) => [styles.more, { backgroundColor: pressed ? theme.backgroundSelected : 'transparent' }]}>
-          <ThemedText style={styles.moreText}>•••</ThemedText>
-        </Pressable>
+        <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={2}>
+          {routine.exercises.join(', ')}
+        </ThemedText>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-        {routine.exercises.join(' · ')}
-      </ThemedText>
-      <Button
-        label={disabled ? 'Workout in progress' : 'Start'}
-        onPress={disabled ? () => router.push('/workout') : onStart}
-        variant={disabled ? 'secondary' : 'primary'}
-        style={styles.startButton}
-      />
+      <Pressable
+        onPress={onMenu}
+        hitSlop={4}
+        accessibilityRole="button"
+        accessibilityLabel={`${routine.name} options`}
+        style={({ pressed }) => [styles.menuButton, pressed && { backgroundColor: theme.fillStrong }]}>
+        <Icon name={{ ios: 'ellipsis', md: 'more_horiz' }} size={18} color={theme.textSecondary} weight="semibold" />
+      </Pressable>
+      {canStart && (
+        <Button
+          label="Start"
+          size="small"
+          variant="tinted"
+          icon={{ ios: 'play.fill', md: 'play_arrow' }}
+          onPress={onStart}
+          accessibilityLabel={`Start ${routine.name}`}
+        />
+      )}
     </View>
   );
 }
 
-function Elapsed({ startedAt, color }: { startedAt: number; color: string }) {
-  const now = useNow(1000);
-  return (
-    <ThemedText type="small" style={{ color, opacity: 0.8 }}>
-      In progress · {formatDuration(now - startedAt)}
-    </ThemedText>
-  );
-}
-
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   content: {
     padding: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.four,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  resume: {
-    borderRadius: 16,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    borderCurve: 'continuous',
+  hint: {
+    marginTop: -Spacing.three,
+    paddingHorizontal: Spacing.three,
   },
-  resumeText: {
-    fontSize: 18,
-    fontWeight: 700,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: Spacing.two,
-    marginBottom: -Spacing.one,
-  },
-  card: {
-    borderRadius: 20,
-    padding: Spacing.three,
-    gap: Spacing.two,
-    borderCurve: 'continuous',
-  },
-  cardHeader: {
+  resumeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  template: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: 700,
-  },
-  more: {
-    borderRadius: 12,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
-  },
-  moreText: {
-    fontSize: 16,
-    fontWeight: 800,
-    letterSpacing: 1,
-  },
-  startButton: {
-    marginTop: Spacing.one,
     paddingVertical: 12,
+    paddingLeft: Spacing.three,
+    paddingRight: Spacing.three - 4,
+    minHeight: 64,
   },
-  dimmed: {
-    opacity: 0.5,
+  menuButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

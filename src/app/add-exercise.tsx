@@ -17,7 +17,7 @@ export default function AddExerciseScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.backgroundPlain }}>
       <ExerciseList onSelect={pick} allowCustom autoFocus />
     </View>
   );

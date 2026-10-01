@@ -2,6 +2,8 @@ import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ChallengeDots } from '@/components/challenge-dots';
+import { Icon } from '@/components/icon';
+import { Section } from '@/components/list';
 import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -24,17 +26,20 @@ export function ChallengeCard() {
   const theme = useTheme();
   const { history, challenge, trophies } = useWorkoutStore();
   const now = useNow();
-  const cardStyle = [cardStyles.card, { backgroundColor: theme.backgroundElement }];
 
   if (!challenge) {
     const lastTrophy = trophies.at(-1);
     const offer = lastTrophy ? CHALLENGES[lastTrophy.id].next : 'kickstart';
     return (
-      <View style={cardStyle}>
-        <ThemedText style={cardStyles.title}>🔥 {CHALLENGES[offer].title}</ThemedText>
-        <ThemedText themeColor="textSecondary">{CHALLENGES[offer].blurb}</ThemedText>
-        <Button label="Start challenge" onPress={() => workoutActions.startChallenge(offer)} />
-      </View>
+      <Section title="Challenge" padded>
+        <View style={styles.text}>
+          <ThemedText type="headline">{CHALLENGES[offer].title}</ThemedText>
+          <ThemedText type="subheadline" themeColor="textSecondary">
+            {CHALLENGES[offer].blurb}
+          </ThemedText>
+        </View>
+        <Button label="Start Challenge" variant="tinted" onPress={() => workoutActions.startChallenge(offer)} />
+      </Section>
     );
   }
 
@@ -43,42 +48,50 @@ export function ChallengeCard() {
 
   if (p.complete) {
     return (
-      <View style={cardStyle}>
-        <ThemedText style={cardStyles.title}>🏆 {p.title} complete</ThemedText>
-        <ThemedText themeColor="textSecondary">
+      <Section title="Challenge" padded>
+        <View style={styles.titleRow}>
+          <Icon name={{ ios: 'trophy.fill', md: 'trophy' }} size={20} color={theme.accent} />
+          <ThemedText type="headline">{p.title} complete</ThemedText>
+        </View>
+        <ThemedText type="subheadline" themeColor="textSecondary">
           {trophies.length} {trophies.length === 1 ? 'trophy' : 'trophies'} earned. Ready for the next one?
         </ThemedText>
-        <Button label={`Start ${CHALLENGES[next].title}`} onPress={() => workoutActions.startChallenge(next)} />
-      </View>
+        <Button
+          label={`Start ${CHALLENGES[next].title}`}
+          variant="tinted"
+          onPress={() => workoutActions.startChallenge(next)}
+        />
+      </Section>
     );
   }
 
   if (p.expired) {
     return (
-      <View style={cardStyle}>
-        <ThemedText style={cardStyles.title}>{p.title} ended</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          You got {p.done} of {p.days} days. That still counts. Run it back?
-        </ThemedText>
-        <Button label="Try again" onPress={() => workoutActions.startChallenge(challenge.id)} />
-      </View>
+      <Section title="Challenge" padded>
+        <View style={styles.text}>
+          <ThemedText type="headline">{p.title} ended</ThemedText>
+          <ThemedText type="subheadline" themeColor="textSecondary">
+            You got {p.done} of {p.days} days. That still counts. Run it back?
+          </ThemedText>
+        </View>
+        <Button label="Try Again" variant="tinted" onPress={() => workoutActions.startChallenge(challenge.id)} />
+      </Section>
     );
   }
 
   return (
-    <View style={cardStyle}>
-      <View style={cardStyles.header}>
-        <ThemedText style={cardStyles.title}>🔥 {p.title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {p.daysLeft} {p.daysLeft === 1 ? 'day' : 'days'} left
+    <Section title="Challenge" trailing={`${p.daysLeft} ${p.daysLeft === 1 ? 'day' : 'days'} left`} padded>
+      <ThemedText type="headline">{p.title}</ThemedText>
+      <ChallengeDots done={p.done} total={p.days} size={18} />
+      <View style={styles.titleRow}>
+        {p.doneToday && (
+          <Icon name={{ ios: 'checkmark.circle.fill', md: 'check_circle' }} size={16} color={theme.accent} />
+        )}
+        <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+          {p.done} of {p.days} days. {p.doneToday ? 'Today’s done.' : 'Work out today to stay on track.'}
         </ThemedText>
       </View>
-      <ChallengeDots done={p.done} total={p.days} size={20} />
-      <ThemedText themeColor="textSecondary">
-        {p.done} of {p.days} workout days.{' '}
-        {p.doneToday ? '✓ Today’s done.' : 'Work out today to stay on track.'}
-      </ThemedText>
-    </View>
+    </Section>
   );
 }
 
@@ -96,7 +109,7 @@ export function ConsistencyCard() {
 
   const gap = 4;
   const inner = Math.min(width, MaxContentWidth) - Spacing.three * 4;
-  const cell = Math.min(24, Math.floor((inner - gap * (WEEKS - 1)) / WEEKS));
+  const cell = Math.min(22, Math.floor((inner - gap * (WEEKS - 1)) / WEEKS));
   const firstWeek = new Date(startOfWeek(now));
   firstWeek.setDate(firstWeek.getDate() - (WEEKS - 1) * 7);
   const today = startOfDay(now);
@@ -105,14 +118,13 @@ export function ConsistencyCard() {
   const streak = weekStreak(history, now);
 
   return (
-    <View style={[cardStyles.card, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText style={cardStyles.title}>Consistency</ThemedText>
-      <View style={cardStyles.statsRow}>
+    <Section title="Consistency" padded>
+      <View style={styles.statsRow}>
         <Stat label="This week" value={String(thisWeek)} />
-        <Stat label="Week streak" value={streak > 0 ? `${streak} 🔥` : '0'} />
-        <Stat label="Last 12 weeks" value={String(history.filter((w) => w.startedAt >= firstWeek.getTime()).length)} />
+        <Stat label="Week streak" value={String(streak)} />
+        <Stat label="All time" value={String(history.length)} />
       </View>
-      <View style={[cardStyles.grid, { gap }]}>
+      <View style={[styles.grid, { gap }]}>
         {Array.from({ length: WEEKS }, (_, week) => (
           <View key={week} style={{ gap }}>
             {Array.from({ length: 7 }, (_, day) => {
@@ -129,14 +141,10 @@ export function ConsistencyCard() {
                     width: cell,
                     height: cell,
                     borderRadius: cell / 4,
-                    backgroundColor: future
-                      ? 'transparent'
-                      : count === 0
-                        ? theme.backgroundSelected
-                        : theme.accent,
-                    opacity: count === 1 ? 0.6 : 1,
-                    borderWidth: ts === today ? 2 : 0,
-                    borderColor: theme.text,
+                    backgroundColor: future ? 'transparent' : count === 0 ? theme.fill : theme.accent,
+                    opacity: count === 1 ? 0.65 : 1,
+                    borderWidth: ts === today ? 1.5 : 0,
+                    borderColor: theme.textSecondary,
                   }}
                 />
               );
@@ -144,15 +152,20 @@ export function ConsistencyCard() {
           </View>
         ))}
       </View>
-      <View style={cardStyles.gridLegend}>
-        <ThemedText type="small" themeColor="textSecondary">
+      <View style={styles.gridLegend}>
+        <ThemedText type="caption" themeColor="textSecondary">
           {WEEKS} weeks ago
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="caption" themeColor="textSecondary">
           This week
         </ThemedText>
       </View>
-    </View>
+      {history.length === 0 && (
+        <ThemedText type="subheadline" themeColor="textSecondary">
+          Each square is a day. Finish a workout and today’s square fills in.
+        </ThemedText>
+      )}
+    </Section>
   );
 }
 
@@ -162,35 +175,32 @@ export function RemindersPrompt() {
   const [enabled, turnOn] = useRemindersEnabled();
   if (Platform.OS === 'web' || enabled !== false) return null;
   return (
-    <View style={[cardStyles.card, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText style={cardStyles.title}>🔔 Stay on track</ThemedText>
-      <ThemedText themeColor="textSecondary">
-        Turn on reminders and we’ll nudge you when it’s been a while since your last workout.
-      </ThemedText>
-      <Button label="Turn on reminders" variant="secondary" onPress={turnOn} />
-    </View>
+    <Section title="Reminders" padded>
+      <View style={styles.titleRow}>
+        <Icon name={{ ios: 'bell.badge', md: 'notifications_active' }} size={20} color={theme.accent} />
+        <ThemedText type="subheadline" themeColor="textSecondary" style={styles.flex}>
+          Get a nudge when it’s been a while since your last workout.
+        </ThemedText>
+      </View>
+      <Button label="Turn On Reminders" variant="tinted" onPress={turnOn} />
+    </Section>
   );
 }
 
-export const cardStyles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    padding: Spacing.three,
-    gap: Spacing.three,
-    borderCurve: 'continuous',
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
   },
-  header: {
+  text: {
+    gap: 2,
+  },
+  titleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 700,
+    gap: Spacing.two,
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   grid: {
     flexDirection: 'row',

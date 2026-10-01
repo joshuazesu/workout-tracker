@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type MenuOption = { label: string; onPress: () => void; destructive?: boolean };
@@ -26,28 +26,43 @@ export function ActionMenu({
       <View style={styles.backdrop}>
         {/* Sibling, not parent, of the sheet so taps on the sheet's padding don't dismiss it. */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" />
-        <View style={[styles.sheet, { backgroundColor: theme.background, paddingBottom: insets.bottom + Spacing.three }]}>
-          {title && (
-            <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
-              {title}
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.two }]}>
+          <View style={[styles.group, { backgroundColor: theme.surface }]}>
+            {title && (
+              <ThemedText type="footnote" themeColor="textSecondary" style={styles.title}>
+                {title}
+              </ThemedText>
+            )}
+            {options?.map((o, i) => (
+              <View key={o.label}>
+                {(i > 0 || title) && <View style={[styles.divider, { backgroundColor: theme.separator }]} />}
+                <Pressable
+                  onPress={() => {
+                    onClose();
+                    // iOS can't present a screen or alert while this modal is still fading out.
+                    setTimeout(o.onPress, 300);
+                  }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.option, pressed && { backgroundColor: theme.fillStrong }]}>
+                  <ThemedText style={[styles.optionText, { color: o.destructive ? theme.destructive : theme.accent }]}>
+                    {o.label}
+                  </ThemedText>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.group,
+              styles.option,
+              { backgroundColor: pressed ? theme.fillStrong : theme.surface },
+            ]}>
+            <ThemedText type="headline" style={[styles.optionText, { color: theme.accent }]}>
+              Cancel
             </ThemedText>
-          )}
-          {options?.map((o) => (
-            <Pressable
-              key={o.label}
-              onPress={() => {
-                onClose();
-                // iOS can't present a screen or alert while this modal is still fading out.
-                setTimeout(o.onPress, 300);
-              }}
-              style={({ pressed }) => [
-                styles.option,
-                { backgroundColor: pressed ? theme.backgroundSelected : theme.backgroundElement },
-              ]}>
-              <ThemedText style={[styles.optionText, o.destructive && styles.destructive]}>{o.label}</ThemedText>
-            </Pressable>
-          ))}
-          <Button label="Cancel" variant="plain" onPress={onClose} />
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -102,8 +117,10 @@ function PromptBody({
     onClose();
   };
   return (
-    <View style={[styles.dialog, { backgroundColor: theme.background }]}>
-      <ThemedText style={styles.dialogTitle}>{title}</ThemedText>
+    <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
+      <ThemedText type="headline" style={styles.dialogTitle}>
+        {title}
+      </ThemedText>
       <TextInput
         value={value}
         onChangeText={setValue}
@@ -111,10 +128,11 @@ function PromptBody({
         selectTextOnFocus
         returnKeyType="done"
         onSubmitEditing={submit}
-        style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+        accessibilityLabel={title}
+        style={[styles.input, { color: theme.text, backgroundColor: theme.fill }]}
       />
       <View style={styles.dialogButtons}>
-        <Button label="Cancel" variant="secondary" onPress={onClose} style={styles.flex} />
+        <Button label="Cancel" variant="tinted" onPress={onClose} style={styles.flex} />
         <Button label="Save" onPress={submit} style={styles.flex} />
       </View>
     </View>
@@ -135,33 +153,36 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: Spacing.three,
+    paddingHorizontal: Spacing.two,
     gap: Spacing.two,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  group: {
+    borderRadius: Radius,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
   title: {
     textAlign: 'center',
-    paddingVertical: Spacing.one,
+    fontWeight: 600,
+    paddingVertical: Spacing.three - 2,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
   },
   option: {
-    borderRadius: 14,
-    paddingVertical: 14,
+    minHeight: 56,
     alignItems: 'center',
-    borderCurve: 'continuous',
+    justifyContent: 'center',
   },
   optionText: {
-    fontSize: 17,
-    fontWeight: 600,
-  },
-  destructive: {
-    color: '#E5484D',
+    fontSize: 20,
+    lineHeight: 25,
   },
   dialog: {
-    borderRadius: 24,
+    borderRadius: Radius + 6,
     padding: Spacing.four,
     gap: Spacing.three,
     width: '100%',
@@ -170,14 +191,14 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   dialogTitle: {
-    fontSize: 20,
-    fontWeight: 700,
+    textAlign: 'center',
   },
   input: {
-    height: 48,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    fontSize: 17,
+    ...TextStyles.body,
+    height: 44,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.three - 4,
+    minWidth: 0,
   },
   dialogButtons: {
     flexDirection: 'row',

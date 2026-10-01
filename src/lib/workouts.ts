@@ -432,7 +432,8 @@ export function personalRecords(workout: Workout, history: Workout[]) {
       w.exercises.filter((x) => x.name === e.name).flatMap((x) => x.sets.map((s) => Number(s.weight) || 0))
     );
     // A first-ever attempt isn't a record, there's nothing to beat.
-    if (previous.length === 0 || top <= Math.max(...previous)) return [];
-    return [{ name: e.name, weight: top }];
+    const previousBest = Math.max(...previous);
+    if (previous.length === 0 || top <= previousBest) return [];
+    return [{ name: e.name, weight: top, previous: previousBest }];
   });
 }

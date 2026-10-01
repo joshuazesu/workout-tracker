@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
+import { Section } from '@/components/list';
 import { ThemedText } from '@/components/themed-text';
 import { WorkoutSummary } from '@/components/workout-summary';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -51,25 +53,33 @@ export default function CalendarScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content}>
-      <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
         <View style={styles.monthRow}>
-          <Pressable onPress={() => shiftMonth(-1)} hitSlop={12} accessibilityLabel="Previous month">
-            <ThemedText style={[styles.arrow, { color: theme.accent }]}>‹</ThemedText>
+          <Pressable
+            onPress={() => shiftMonth(-1)}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            style={styles.arrow}>
+            <Icon name={{ ios: 'chevron.left', md: 'chevron_left' }} size={18} color={theme.accent} weight="semibold" />
           </Pressable>
           <View style={styles.monthTitle}>
-            <ThemedText style={styles.monthText}>{monthLabel}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="headline">{monthLabel}</ThemedText>
+            <ThemedText type="footnote" themeColor="textSecondary" numeric>
               {daysThisMonth} {daysThisMonth === 1 ? 'day' : 'days'} trained
             </ThemedText>
           </View>
-          <Pressable onPress={() => shiftMonth(1)} hitSlop={12} accessibilityLabel="Next month">
-            <ThemedText style={[styles.arrow, { color: theme.accent }]}>›</ThemedText>
+          <Pressable
+            onPress={() => shiftMonth(1)}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            style={styles.arrow}>
+            <Icon name={{ ios: 'chevron.right', md: 'chevron_right' }} size={18} color={theme.accent} weight="semibold" />
           </Pressable>
         </View>
 
         <View style={styles.grid}>
           {WEEKDAYS.map((d, i) => (
-            <ThemedText key={i} type="smallBold" themeColor="textSecondary" style={styles.weekday}>
+            <ThemedText key={i} type="caption" themeColor="textSecondary" style={styles.weekday}>
               {d}
             </ThemedText>
           ))}
@@ -86,22 +96,26 @@ export default function CalendarScreen() {
                   feedback.tap();
                   setSelected(ts);
                 }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${date.toDateString()}${worked ? ', worked out' : ''}`}
                 style={styles.cell}>
                 <View
                   style={[
                     styles.day,
-                    worked && { backgroundColor: theme.accent + '40' },
-                    isSelected && { borderColor: theme.text, borderWidth: 2 },
+                    worked && { backgroundColor: theme.accent },
+                    isSelected && { borderColor: worked ? theme.text : theme.outline },
                   ]}>
-                  <ThemedText style={[styles.dayText, isToday && { color: theme.accent, fontWeight: 800 }]}>
+                  <ThemedText
+                    numeric
+                    style={[
+                      styles.dayText,
+                      worked
+                        ? { color: theme.onAccent, fontWeight: 600 }
+                        : isToday && { color: theme.accent, fontWeight: 700 },
+                    ]}>
                     {date.getDate()}
                   </ThemedText>
-                  {worked && (
-                    <View style={[styles.tick, { backgroundColor: theme.accent }]}>
-                      <ThemedText style={[styles.tickText, { color: theme.onAccent }]}>✓</ThemedText>
-                    </View>
-                  )}
                 </View>
               </Pressable>
             );
@@ -109,15 +123,24 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        {new Date(selected)
-          .toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
-          .toUpperCase()}
+      <ThemedText type="title3" style={styles.dayTitle} accessibilityRole="header">
+        {new Date(selected).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
       </ThemedText>
       {selectedWorkouts.length === 0 ? (
-        <ThemedText themeColor="textSecondary">No workout logged on this day.</ThemedText>
+        <Section padded>
+          <View style={styles.rest}>
+            <Icon name={{ ios: 'moon.zzz', md: 'bedtime' }} size={20} color={theme.textSecondary} />
+            <ThemedText type="subheadline" themeColor="textSecondary">
+              Rest day. No workout logged.
+            </ThemedText>
+          </View>
+        </Section>
       ) : (
-        selectedWorkouts.map((w) => <WorkoutSummary key={w.id} workout={w} />)
+        <Section>
+          {selectedWorkouts.map((w) => (
+            <WorkoutSummary key={w.id} workout={w} initiallyOpen />
+          ))}
+        </Section>
       )}
     </ScrollView>
   );
@@ -132,8 +155,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   card: {
-    borderRadius: 20,
-    padding: Spacing.three,
+    borderRadius: Radius,
+    padding: Spacing.two,
+    paddingBottom: Spacing.three,
     gap: Spacing.two,
     borderCurve: 'continuous',
   },
@@ -141,20 +165,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.two,
   },
   monthTitle: {
     alignItems: 'center',
   },
-  monthText: {
-    fontSize: 18,
-    fontWeight: 700,
-  },
   arrow: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontWeight: 600,
-    paddingHorizontal: Spacing.two,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   grid: {
     flexDirection: 'row',
@@ -163,37 +182,33 @@ const styles = StyleSheet.create({
   weekday: {
     width: `${100 / 7}%`,
     textAlign: 'center',
+    fontWeight: 600,
     paddingVertical: Spacing.one,
   },
   cell: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
-    padding: 3,
+    padding: 4,
   },
   day: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   dayText: {
-    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
   },
-  tick: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  dayTitle: {
+    fontWeight: 700,
+    paddingHorizontal: Spacing.one,
+    marginTop: Spacing.two,
+  },
+  rest: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tickText: {
-    fontSize: 9,
-    lineHeight: 12,
-    fontWeight: 900,
+    gap: Spacing.two,
   },
 });

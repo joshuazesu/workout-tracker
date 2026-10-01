@@ -58,7 +58,7 @@ function Dot({ filled, pop, size }: { filled: boolean; pop: boolean; size: numbe
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: theme.backgroundSelected,
+        backgroundColor: theme.fillStrong,
       }}>
       {filled && (
         <Animated.View

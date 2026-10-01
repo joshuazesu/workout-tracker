@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { ChallengeDots } from '@/components/challenge-dots';
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -35,45 +36,47 @@ export default function OnboardingScreen() {
 
   const steps = [
     {
-      emoji: '🏋️',
+      icon: { ios: 'figure.strengthtraining.traditional', md: 'fitness_center' } as const,
       title: 'Log every set.\nBuild the habit.',
       body: 'Pick a workout, tick off each set as you go, and watch your consistency stack up.',
-      actions: <Button label="Get started" onPress={() => next()} />,
+      actions: <Button label="Get Started" onPress={() => next()} />,
     },
     {
-      emoji: '🔥',
+      icon: { ios: 'calendar.badge.checkmark', md: 'event_available' } as const,
       title: `Take the ${kickstart.title}`,
       body: `${kickstart.blurb} Finish it to earn your first trophy.`,
       extra: <ChallengeDots done={0} total={kickstart.days} size={22} />,
       actions: (
         <>
-          <Button label="I’m in" onPress={() => next(true)} />
-          <Button label="Maybe later" variant="plain" onPress={() => next(false)} />
+          <Button label="I’m In" onPress={() => next(true)} />
+          <Button label="Maybe Later" variant="plain" onPress={() => next(false)} />
         </>
       ),
     },
     {
-      emoji: '🔔',
+      icon: { ios: 'bell.badge', md: 'notifications_active' } as const,
       title: 'Want a nudge?',
       body: acceptChallenge
         ? 'We’ll check in each evening until your challenge is done, and give you a nudge if a week goes by without a workout.'
         : 'We’ll give you a nudge if you go a few days without a workout. No spam, just a push when you need it.',
       actions: (
         <>
-          <Button label="Turn on reminders" onPress={() => finish(true)} />
-          <Button label="Not now" variant="plain" onPress={() => finish(false)} />
+          <Button label="Turn On Reminders" onPress={() => finish(true)} />
+          <Button label="Not Now" variant="plain" onPress={() => finish(false)} />
         </>
       ),
     },
   ];
+  // Web skips the reminders step, so it shouldn't show a dot for it.
+  const stepCount = Platform.OS === 'web' ? 2 : steps.length;
   const current = steps[step];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Animated.View key={step} entering={FadeInDown.duration(400)} exiting={FadeOut.duration(150)} style={styles.body}>
-        <ThemedText style={styles.emoji}>{current.emoji}</ThemedText>
-        <ThemedText style={styles.title}>{current.title}</ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.text}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
+      <Animated.View key={step} entering={FadeInDown.duration(350)} exiting={FadeOut.duration(150)} style={styles.body}>
+        <Icon name={current.icon} size={56} color={theme.accent} />
+        <ThemedText type="largeTitle">{current.title}</ThemedText>
+        <ThemedText type="body" themeColor="textSecondary">
           {current.body}
         </ThemedText>
         {current.extra}
@@ -81,12 +84,12 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <View style={styles.pager}>
-          {steps.map((_, i) => (
+          {steps.slice(0, stepCount).map((_, i) => (
             <View
               key={i}
               style={[
                 styles.pagerDot,
-                { backgroundColor: i === step ? theme.accent : theme.backgroundSelected, width: i === step ? 20 : 8 },
+                { backgroundColor: i === step ? theme.text : theme.fillStrong, width: i === step ? 20 : 8 },
               ]}
             />
           ))}
@@ -109,19 +112,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
-  },
-  emoji: {
-    fontSize: 64,
-    lineHeight: 76,
-  },
-  title: {
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: 800,
-  },
-  text: {
-    fontSize: 18,
-    lineHeight: 26,
   },
   footer: {
     gap: Spacing.two,

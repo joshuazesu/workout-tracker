@@ -3,9 +3,10 @@ import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, SectionList, StyleSheet, TextInput, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { EXERCISE_CATALOG, type ExerciseInfo } from '@/constants/exercises';
-import { Spacing } from '@/constants/theme';
+import { Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Row = { name: string; info?: ExerciseInfo; custom?: boolean };
@@ -61,22 +62,26 @@ export function ExerciseList({
         />
       )}
       {!nativeSearch && (
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search exercises or muscles"
-          placeholderTextColor={theme.textSecondary}
-          autoFocus={autoFocus}
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          returnKeyType={allowCustom ? 'done' : 'search'}
-          onSubmitEditing={() => {
-            if (!allowCustom || !trimmed) return;
-            // A single match is almost certainly what was meant; otherwise use the typed name.
-            onSelect(matches.length === 1 ? matches[0].name : trimmed);
-          }}
-          style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-        />
+        <View style={[styles.search, { backgroundColor: theme.fill }]}>
+          <Icon name={{ ios: 'magnifyingglass', md: 'search' }} size={17} color={theme.textSecondary} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search exercises or muscles"
+            placeholderTextColor={theme.textSecondary}
+            autoFocus={autoFocus}
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType={allowCustom ? 'done' : 'search'}
+            onSubmitEditing={() => {
+              if (!allowCustom || !trimmed) return;
+              // A single match is almost certainly what was meant; otherwise use the typed name.
+              onSelect(matches.length === 1 ? matches[0].name : trimmed);
+            }}
+            accessibilityLabel="Search exercises"
+            style={[styles.searchInput, { color: theme.text }]}
+          />
+        </View>
       )}
       <SectionList
         sections={sections}
@@ -88,38 +93,35 @@ export function ExerciseList({
         renderSectionHeader={({ section }) =>
           section.title ? (
             <ThemedText
-              type="smallBold"
+              type="footnote"
               themeColor="textSecondary"
-              style={[styles.sectionHeader, { backgroundColor: theme.background }]}>
+              style={[styles.sectionHeader, { backgroundColor: theme.backgroundPlain }]}>
               {section.title}
             </ThemedText>
           ) : null
         }
         ListEmptyComponent={
-          <ThemedText themeColor="textSecondary" style={styles.empty}>
+          <ThemedText type="subheadline" themeColor="textSecondary" style={styles.empty}>
             No exercises match “{trimmed}”.
           </ThemedText>
         }
         renderItem={({ item }) => (
           <Pressable
             onPress={() => onSelect(item.name)}
-            style={({ pressed }) => [
-              styles.row,
-              { borderBottomColor: theme.backgroundSelected },
-              pressed && { backgroundColor: theme.backgroundElement },
-            ]}>
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fillStrong }]}>
             {item.info ? (
               <Image source={item.info.images[0]} style={styles.thumb} contentFit="cover" />
             ) : (
-              <View style={[styles.thumb, styles.customThumb, { backgroundColor: theme.backgroundElement }]}>
-                <ThemedText style={{ color: theme.accent, fontWeight: 800 }}>+</ThemedText>
+              <View style={[styles.thumb, styles.customThumb, { backgroundColor: theme.accentSoft }]}>
+                <Icon name={{ ios: 'plus', md: 'add' }} size={22} color={theme.accent} weight="semibold" />
               </View>
             )}
-            <View style={styles.flex}>
-              <ThemedText style={item.custom ? { color: theme.accent, fontWeight: 700 } : styles.name}>
+            <View style={[styles.flex, styles.rowText, { borderBottomColor: theme.separator }]}>
+              <ThemedText style={item.custom ? { color: theme.accent } : undefined}>
                 {item.custom ? `Add “${item.name}”` : item.name}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              <ThemedText type="subheadline" themeColor="textSecondary" numberOfLines={1}>
                 {item.info ? `${item.info.muscles.join(', ')} · ${item.info.equipment}` : 'Custom exercise'}
               </ThemedText>
             </View>
@@ -138,35 +140,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   search: {
-    margin: Spacing.three,
-    height: 44,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    fontSize: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: Spacing.three,
+    marginVertical: Spacing.two,
+    height: 36,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.two,
+  },
+  searchInput: {
+    ...TextStyles.body,
+    flex: 1,
+    minWidth: 0,
+    height: 36,
   },
   sectionHeader: {
+    fontWeight: 600,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.one,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.three - 4,
+    paddingLeft: Spacing.three,
+  },
+  // The separator runs under the text only, like iOS lists with thumbnails.
+  rowText: {
+    justifyContent: 'center',
+    gap: 1,
+    minHeight: 64,
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingRight: Spacing.three,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   thumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 8,
   },
   customThumb: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  name: {
-    fontWeight: 600,
   },
   empty: {
     textAlign: 'center',

@@ -9,8 +9,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
@@ -20,33 +21,33 @@ export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise:
   const theme = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <View style={styles.titleRow}>
-        <ThemedText style={[styles.title, { color: theme.accent }]} numberOfLines={1}>
+        <ThemedText type="headline" numberOfLines={1} style={styles.flex}>
           {exercise.name}
         </ThemedText>
         <Pressable
-          hitSlop={10}
+          hitSlop={8}
+          accessibilityRole="button"
           accessibilityLabel={`Remove ${exercise.name}`}
+          style={styles.iconButton}
           onPress={() =>
             confirm('Remove exercise', `Remove ${exercise.name} and its sets?`, 'Remove', () =>
               workoutActions.removeExercise(exercise.id)
             )
           }>
-          <ThemedText themeColor="textSecondary" style={styles.remove}>
-            ✕
-          </ThemedText>
+          <Icon name={{ ios: 'xmark.circle.fill', md: 'cancel' }} size={22} color={theme.textSecondary} />
         </Pressable>
       </View>
 
       <View style={styles.row}>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.colSet}>
+        <ThemedText type="caption" themeColor="textSecondary" style={[styles.colSet, styles.header]}>
           SET
         </ThemedText>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.colInput}>
+        <ThemedText type="caption" themeColor="textSecondary" style={[styles.colInput, styles.header]}>
           KG
         </ThemedText>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.colInput}>
+        <ThemedText type="caption" themeColor="textSecondary" style={[styles.colInput, styles.header]}>
           REPS
         </ThemedText>
         <View style={styles.colCheck} />
@@ -61,11 +62,12 @@ export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise:
           feedback.tap();
           workoutActions.addSet(exercise.id);
         }}
-        style={({ pressed }) => [
-          styles.addSet,
-          { backgroundColor: theme.backgroundSelected, opacity: pressed ? 0.7 : 1 },
-        ]}>
-        <ThemedText type="smallBold">+ Add set</ThemedText>
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.addSet, { opacity: pressed ? 0.6 : 1 }]}>
+        <Icon name={{ ios: 'plus', md: 'add' }} size={15} color={theme.accent} weight="semibold" />
+        <ThemedText type="subheadline" style={{ color: theme.accent, fontWeight: 600 }}>
+          Add Set
+        </ThemedText>
       </Pressable>
     </View>
   );
@@ -77,7 +79,7 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
     styles.input,
     {
       color: theme.text,
-      backgroundColor: set.done ? 'transparent' : theme.backgroundSelected,
+      backgroundColor: set.done ? 'transparent' : theme.fill,
     },
   ];
 
@@ -98,13 +100,13 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
       feedback.tap();
     } else {
       feedback.setDone();
-      if (!reduceMotion) pop.set(withSequence(withTiming(1.3, { duration: 90 }), withSpring(1, { damping: 7 })));
+      if (!reduceMotion) pop.set(withSequence(withTiming(1.2, { duration: 90 }), withSpring(1, { damping: 8 })));
     }
     workoutActions.updateSet(exerciseId, set.id, { done: !set.done });
   };
 
   return (
-    <View style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accent + '33' }]}>
+    <View style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accentSoft }]}>
       <Pressable
         style={styles.colSet}
         accessibilityLabel={`Set ${index + 1}. Long-press to remove`}
@@ -113,7 +115,7 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
             workoutActions.removeSet(exerciseId, set.id)
           )
         }>
-        <ThemedText type="smallBold" style={styles.setNumber}>
+        <ThemedText type="subheadline" numeric style={styles.setNumber}>
           {index + 1}
         </ThemedText>
       </Pressable>
@@ -151,13 +153,12 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
         <Animated.View
           style={[
             styles.check,
-            { backgroundColor: set.done ? theme.accent : theme.backgroundSelected },
+            set.done
+              ? { backgroundColor: theme.accent, borderColor: theme.accent }
+              : { backgroundColor: 'transparent', borderColor: theme.outline },
             popStyle,
           ]}>
-          <ThemedText
-            style={[styles.checkMark, { color: set.done ? theme.onAccent : theme.textSecondary }]}>
-            ✓
-          </ThemedText>
+          {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onAccent} weight="bold" />}
         </Animated.View>
       </Pressable>
     </View>
@@ -165,9 +166,13 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   card: {
-    borderRadius: 20,
-    paddingVertical: Spacing.three,
+    borderRadius: Radius,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.one,
     paddingHorizontal: Spacing.two,
     gap: Spacing.one,
     borderCurve: 'continuous',
@@ -175,18 +180,13 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.two,
-    marginBottom: Spacing.one,
+    paddingLeft: Spacing.two,
   },
-  title: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: 700,
-  },
-  remove: {
-    fontSize: 16,
-    paddingLeft: Spacing.three,
+  iconButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -194,17 +194,21 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingHorizontal: Spacing.two,
   },
+  header: {
+    fontWeight: 600,
+    textAlign: 'center',
+  },
   setRow: {
     borderRadius: 10,
     paddingVertical: Spacing.one,
   },
   colSet: {
-    width: 36,
+    width: 32,
     alignItems: 'center',
-    textAlign: 'center',
   },
   setNumber: {
     textAlign: 'center',
+    fontWeight: 600,
   },
   colInput: {
     flex: 1,
@@ -213,31 +217,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   colCheck: {
-    width: 40,
+    width: 44,
+    alignItems: 'center',
   },
   input: {
     height: 36,
     borderRadius: 8,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 600,
+    fontVariant: ['tabular-nums'],
   },
   check: {
+    width: 36,
     height: 36,
     borderRadius: 8,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  checkMark: {
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: 800,
   },
   addSet: {
-    marginTop: Spacing.two,
-    marginHorizontal: Spacing.two,
-    height: 36,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.one,
+    minHeight: 44,
   },
 });

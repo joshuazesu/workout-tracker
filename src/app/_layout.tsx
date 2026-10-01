@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { Colors } from '@/constants/theme';
 import { preloadSounds } from '@/lib/feedback';
 import { syncReminders } from '@/lib/reminders';
 import { useWorkoutStore } from '@/lib/workouts';
@@ -15,6 +16,20 @@ preloadSounds();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { onboarded, history, challenge } = useWorkoutStore();
+  const dark = colorScheme === 'dark';
+  const colors = Colors[dark ? 'dark' : 'light'];
+  // Headers match the grouped background so large titles sit on the same grey as the content.
+  const navTheme = {
+    ...(dark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(dark ? DarkTheme : DefaultTheme).colors,
+      primary: colors.accent,
+      background: colors.background,
+      card: colors.background,
+      text: colors.text,
+      border: colors.separator,
+    },
+  };
 
   // Every logged workout (or challenge change) pushes the reminder schedule forward.
   useEffect(() => {
@@ -22,7 +37,7 @@ export default function RootLayout() {
   }, [history, challenge]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navTheme}>
       <AnimatedSplashOverlay />
       <StatusBar style="auto" />
       <Stack>
@@ -34,7 +49,11 @@ export default function RootLayout() {
           <Stack.Screen name="workout" options={{ title: 'Workout', headerBackTitle: 'Back' }} />
           <Stack.Screen
             name="add-exercise"
-            options={{ title: 'Add Exercise', presentation: 'modal' }}
+            options={{
+              title: 'Add Exercise',
+              presentation: 'modal',
+              headerStyle: { backgroundColor: colors.backgroundPlain },
+            }}
           />
           <Stack.Screen name="routine" options={{ presentation: 'modal' }} />
           <Stack.Screen

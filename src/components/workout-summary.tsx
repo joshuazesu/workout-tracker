@@ -1,92 +1,103 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
-import { Stat } from '@/components/stat';
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
-import { formatDuration, type Workout, workoutActions, workoutVolume } from '@/lib/workouts';
+import { formatMinutes, relativeDay, summarizeSets } from '@/lib/format';
+import { type Workout, workoutActions, workoutVolume } from '@/lib/workouts';
 
-/** A finished workout with every exercise and set. Long-press to delete it. */
-export function WorkoutSummary({ workout }: { workout: Workout }) {
+/**
+ * One finished workout as a list row: name, when, how long and how much. Tap to expand the sets,
+ * long-press to delete. Sits inside a `Section`.
+ */
+export function WorkoutSummary({ workout, initiallyOpen = false }: { workout: Workout; initiallyOpen?: boolean }) {
   const theme = useTheme();
+  const now = useNow(60_000);
+  const reduceMotion = useReducedMotion();
+  const [open, setOpen] = useState(initiallyOpen);
   const started = new Date(workout.startedAt);
-  const sets = workout.exercises.reduce((n, e) => n + e.sets.length, 0);
+  const time = started.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const duration = formatMinutes((workout.endedAt ?? workout.startedAt) - workout.startedAt);
+  const volume = Math.round(workoutVolume(workout));
 
   return (
     <Pressable
+      onPress={() => setOpen(!open)}
       onLongPress={() =>
         confirm('Delete workout', 'This workout will be removed from your history.', 'Delete', () =>
           workoutActions.deleteFromHistory(workout.id)
         )
       }
-      style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-      <View>
-        <ThemedText style={styles.title}>{workout.name || 'Workout'}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {started.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} ·{' '}
-          {started.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-        </ThemedText>
+      accessibilityRole="button"
+      accessibilityState={{ expanded: open }}
+      accessibilityHint="Shows every set. Long-press to delete."
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fillStrong }]}>
+      <View style={styles.header}>
+        <View style={styles.flex}>
+          <ThemedText type="headline" numberOfLines={1}>
+            {workout.name || 'Workout'}
+          </ThemedText>
+          <ThemedText type="subheadline" themeColor="textSecondary" numeric numberOfLines={1}>
+            {relativeDay(workout.startedAt, now)}, {time} · {duration}
+            {volume > 0 ? ` · ${volume.toLocaleString()} kg` : ''}
+          </ThemedText>
+        </View>
+        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+          <Icon name={{ ios: 'chevron.right', md: 'chevron_right' }} size={14} color={theme.textSecondary} weight="semibold" />
+        </View>
       </View>
 
-      <View style={styles.stats}>
-        <Stat label="Duration" value={formatDuration((workout.endedAt ?? workout.startedAt) - workout.startedAt)} />
-        <Stat label="Volume" value={`${Math.round(workoutVolume(workout)).toLocaleString()} kg`} />
-        <Stat label="Sets" value={String(sets)} />
-      </View>
-
-      {workout.exercises.map((e) => (
-        <View key={e.id} style={[styles.exercise, { borderTopColor: theme.backgroundSelected }]}>
-          <ThemedText style={[styles.exerciseName, { color: theme.accent }]}>{e.name}</ThemedText>
-          {e.sets.map((set, i) => (
-            <View key={set.id} style={styles.setRow}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.setIndex}>
-                {i + 1}
+      {open ? (
+        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(180)} style={styles.details}>
+          {workout.exercises.map((e) => (
+            <View key={e.id} style={styles.exercise}>
+              <ThemedText type="subheadline" style={styles.exerciseName} numberOfLines={1}>
+                {e.name}
               </ThemedText>
-              <ThemedText type="small" style={styles.setValue}>
-                {Number(set.weight) > 0 ? `${set.weight} kg × ${set.reps}` : `${set.reps} reps`}
+              <ThemedText type="subheadline" themeColor="textSecondary" numeric style={styles.flex}>
+                {summarizeSets(e.sets)}
               </ThemedText>
             </View>
           ))}
-        </View>
-      ))}
+        </Animated.View>
+      ) : (
+        <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={1}>
+          {workout.exercises.map((e) => e.name).join(', ')}
+        </ThemedText>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    padding: Spacing.three,
-    gap: Spacing.three,
-    borderCurve: 'continuous',
+  flex: {
+    flex: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 700,
+  row: {
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.three,
+    gap: Spacing.one,
   },
-  stats: {
+  header: {
     flexDirection: 'row',
-    gap: Spacing.five,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  details: {
+    gap: Spacing.one,
+    paddingTop: Spacing.one,
   },
   exercise: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: Spacing.two,
-    gap: Spacing.half,
-  },
-  exerciseName: {
-    fontWeight: 700,
-    marginBottom: Spacing.half,
-  },
-  setRow: {
     flexDirection: 'row',
     gap: Spacing.three,
   },
-  setIndex: {
-    width: 16,
-    fontVariant: ['tabular-nums'],
-  },
-  setValue: {
-    fontVariant: ['tabular-nums'],
+  exerciseName: {
+    width: '42%',
+    fontWeight: 600,
   },
 });

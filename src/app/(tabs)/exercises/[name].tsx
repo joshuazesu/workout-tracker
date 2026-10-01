@@ -3,9 +3,11 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { Icon } from '@/components/icon';
+import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
 import { findExercise } from '@/constants/exercises';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutStore } from '@/lib/workouts';
@@ -28,9 +30,9 @@ export default function ExerciseDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: name }} />
-      <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content}>
+      <ScrollView style={{ backgroundColor: theme.backgroundPlain }} contentContainerStyle={styles.content}>
         {info ? (
-          <View style={[styles.media, { backgroundColor: theme.backgroundElement }]}>
+          <View style={[styles.media, { backgroundColor: theme.fill }]}>
             <Image
               source={info.images[frame]}
               style={StyleSheet.absoluteFill}
@@ -45,17 +47,21 @@ export default function ExerciseDetailScreen() {
             </View>
           </View>
         ) : (
-          <View style={[styles.media, styles.noMedia, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText style={styles.noMediaEmoji}>🏋️</ThemedText>
-            <ThemedText themeColor="textSecondary">Custom exercise, no guide available.</ThemedText>
+          <View style={[styles.media, styles.noMedia, { backgroundColor: theme.fill }]}>
+            <Icon name={{ ios: 'dumbbell', md: 'fitness_center' }} size={40} color={theme.textSecondary} />
+            <ThemedText type="subheadline" themeColor="textSecondary">
+              Custom exercise, so there’s no guide.
+            </ThemedText>
           </View>
         )}
 
         {info && (
           <View style={styles.chips}>
             {[...info.muscles, info.equipment].map((label) => (
-              <View key={label} style={[styles.chip, { backgroundColor: theme.backgroundElement }]}>
-                <ThemedText type="smallBold">{label}</ThemedText>
+              <View key={label} style={[styles.chip, { backgroundColor: theme.fill }]}>
+                <ThemedText type="subheadline" style={styles.chipText}>
+                  {label}
+                </ThemedText>
               </View>
             ))}
           </View>
@@ -63,11 +69,13 @@ export default function ExerciseDetailScreen() {
 
         {info && (
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>How to do it</ThemedText>
+            <ThemedText type="title3" style={styles.sectionTitle} accessibilityRole="header">
+              How to Do It
+            </ThemedText>
             {info.steps.map((step, i) => (
               <View key={i} style={styles.step}>
-                <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
-                  <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
+                <View style={[styles.stepNumber, { backgroundColor: theme.fill }]}>
+                  <ThemedText type="subheadline" numeric style={styles.stepNumberText}>
                     {i + 1}
                   </ThemedText>
                 </View>
@@ -78,17 +86,18 @@ export default function ExerciseDetailScreen() {
         )}
 
         {logged.length > 0 && (
-          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              YOUR HISTORY
+          <View style={styles.section}>
+            <ThemedText type="title3" style={styles.sectionTitle} accessibilityRole="header">
+              Your History
             </ThemedText>
-            <ThemedText>
-              Logged {logged.length} {logged.length === 1 ? 'time' : 'times'}
-              {best > 0 ? ` · Best ${best} kg` : ''}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Last done {new Date(logged[0].at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </ThemedText>
+            <View style={[styles.card, { backgroundColor: theme.fill }]}>
+              <Stat label="Logged" value={`${logged.length}×`} />
+              <Stat label="Best" value={best > 0 ? `${best} kg` : '–'} />
+              <Stat
+                label="Last done"
+                value={new Date(logged[0].at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              />
+            </View>
           </View>
         )}
       </ScrollView>
@@ -106,7 +115,7 @@ const styles = StyleSheet.create({
   },
   media: {
     aspectRatio: 3 / 2,
-    borderRadius: 20,
+    borderRadius: Radius,
     overflow: 'hidden',
     borderCurve: 'continuous',
   },
@@ -114,10 +123,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-  },
-  noMediaEmoji: {
-    fontSize: 44,
-    lineHeight: 52,
   },
   frameDots: {
     position: 'absolute',
@@ -140,14 +145,16 @@ const styles = StyleSheet.create({
   },
   chip: {
     borderRadius: 999,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three - 4,
+    paddingVertical: Spacing.one + 1,
+  },
+  chipText: {
+    fontWeight: 500,
   },
   section: {
     gap: Spacing.three,
   },
   sectionTitle: {
-    fontSize: 20,
     fontWeight: 700,
   },
   step: {
@@ -156,19 +163,24 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   stepNumber: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stepNumberText: {
+    fontWeight: 600,
+  },
   stepText: {
     flex: 1,
+    // Centres the first line on the 28 pt number circle.
+    paddingTop: 3,
   },
   card: {
-    borderRadius: 20,
+    flexDirection: 'row',
+    borderRadius: Radius,
     padding: Spacing.three,
-    gap: Spacing.one,
     borderCurve: 'continuous',
   },
 });
