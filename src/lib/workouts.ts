@@ -66,9 +66,14 @@ export type Profile = {
   weightKg: string;
 };
 
+/** One body-weight reading per local day; `day` is that day's `startOfDay` timestamp. */
+export type WeightEntry = { day: number; kg: number };
+
 type State = {
   onboarded: boolean;
   profile: Profile;
+  /** Body-weight log, oldest first. The newest entry is mirrored into `profile.weightKg`. */
+  weights: WeightEntry[];
   active: Workout | null;
   history: Workout[];
   routines: Routine[];
@@ -129,6 +134,7 @@ const defaultRoutines = (): Routine[] => [
 const initialState = (): State => ({
   onboarded: false,
   profile: { name: '', heightCm: '', weightKg: '' },
+  weights: [],
   active: null,
   history: [],
   routines: defaultRoutines(),
@@ -142,7 +148,13 @@ const initialState = (): State => ({
 function load(): State {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...initialState(), ...(JSON.parse(raw) as Partial<State>) };
+    if (raw) {
+      const saved = { ...initialState(), ...(JSON.parse(raw) as Partial<State>) };
+      // Before the weight log, the profile weight was the only reading; it becomes the first entry.
+      const kg = Number(saved.profile.weightKg);
+      if (saved.weights.length === 0 && kg > 0) saved.weights = [{ day: startOfDay(Date.now()), kg }];
+      return saved;
+    }
     // v1 only had { active, history }; keep those and fill in the rest.
     const legacy = localStorage.getItem(LEGACY_KEY);
     if (legacy) return { ...initialState(), ...(JSON.parse(legacy) as Pick<State, 'active' | 'history'>) };
@@ -392,7 +404,49 @@ export const profileActions = {
   setAppearance(appearance: Appearance) {
     setState((s) => ({ ...s, appearance }));
   },
+  /** Records today's body weight, replacing an earlier reading from today. Ignores non-positive values. */
+  logWeight(kg: number) {
+    if (!(kg > 0)) return;
+    setState((s) => ({ ...s, weights: withToday(s.weights, kg), profile: { ...s.profile, weightKg: String(kg) } }));
+  },
+  /** The Settings weight field: keeps the text as typed, and logs it as today's reading once it's a number. */
+  editWeight(text: string) {
+    const kg = Number(text);
+    setState((s) => ({
+      ...s,
+      weights: kg > 0 ? withToday(s.weights, kg) : s.weights,
+      profile: { ...s.profile, weightKg: text },
+    }));
+  },
 };
+
+/** Today is always the newest day, so its reading goes last. */
+function withToday(weights: WeightEntry[], kg: number): WeightEntry[] {
+  const day = startOfDay(Date.now());
+  return [...weights.filter((w) => w.day !== day), { day, kg }];
+}
+
+/** The newest reading compared with an older one: from the first ever, or from `days` ago. */
+export type WeightChange = { kg: number; since: 'start' | number };
+
+/**
+ * Weight changes to show under the profile name: since the first reading, then over the last 7, 12
+ * and 30 days. A window only appears when there's a reading from before it began and one inside it,
+ * so "over last 30 days" never quietly means "over the last 5".
+ */
+export function weightChanges(weights: WeightEntry[], now = Date.now()): WeightChange[] {
+  const latest = weights.at(-1);
+  if (!latest || weights.length < 2) return [];
+  const round = (kg: number) => Math.round(kg * 10) / 10;
+  const changes: WeightChange[] = [{ kg: round(latest.kg - weights[0].kg), since: 'start' }];
+  for (const days of [7, 12, 30]) {
+    const cutoff = new Date(startOfDay(now));
+    cutoff.setDate(cutoff.getDate() - days);
+    const before = weights.findLast((w) => w.day <= cutoff.getTime());
+    if (before && before !== latest) changes.push({ kg: round(latest.kg - before.kg), since: days });
+  }
+  return changes;
+}
 
 function moveItem<T>(list: T[], from: number, to: number): T[] {
   if (from === to || from < 0 || from >= list.length) return list;

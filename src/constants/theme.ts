@@ -37,6 +37,8 @@ export const Colors = {
     /** Habit grid: a day with one workout. Days with more use `accent`. */
     accentMid: '#7FA9EA',
     destructive: '#D70015',
+    /** Body weight going down (the profile weight delta); going up uses `destructive`. */
+    positive: '#1A7F37',
     avatar: '#7D8592',
   },
   dark: {
@@ -57,6 +59,7 @@ export const Colors = {
     accentSoft: '#4C95FF29',
     accentMid: '#2D6FD6',
     destructive: '#FF453A',
+    positive: '#3FB950',
     avatar: '#5C6673',
   },
 } as const;

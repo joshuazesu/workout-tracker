@@ -9,6 +9,7 @@ import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
+import { WeightCard, WeightDelta } from '@/components/weight';
 import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -16,7 +17,7 @@ import { CHALLENGES, challengeProgress, useWorkoutStore, weekStreak } from '@/li
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { profile, history, trophies, challenge } = useWorkoutStore();
+  const { profile, weights, history, trophies, challenge } = useWorkoutStore();
   const now = useNow();
   const details = [
     profile.heightCm && `${profile.heightCm} cm`,
@@ -52,8 +53,9 @@ export default function ProfileScreen() {
                 <Icon name={{ ios: 'gearshape', md: 'settings' }} size={24} color={theme.text} />
               </Pressable>
             </View>
-          }
-        />
+          }>
+          <WeightDelta weights={weights} />
+        </ScreenHeader>
         {!profile.name && (
           <Button label="Add your name" variant="tinted" size="small" onPress={openSettings} style={styles.addName} />
         )}
@@ -62,6 +64,8 @@ export default function ProfileScreen() {
           <Total label="Workouts" value={String(history.length)} />
           <Total label="Week streak" value={String(streak)} accent={streak > 0} />
         </Section>
+
+        <WeightCard weights={weights} />
 
         <ConsistencyCard />
 

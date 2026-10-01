@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  type KeyboardTypeOptions,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -119,12 +128,16 @@ export function PromptDialog({
   title,
   initialValue,
   visible,
+  keyboardType,
+  placeholder,
   onSubmit,
   onClose,
 }: {
   title: string;
   initialValue: string;
   visible: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  placeholder?: string;
   onSubmit: (value: string) => void;
   onClose: () => void;
 }) {
@@ -136,7 +149,15 @@ export function PromptDialog({
         style={[styles.backdrop, styles.center]}>
         {/* Remount per open so the field starts from the current name. */}
         {visible && (
-          <PromptBody title={title} initialValue={initialValue} onSubmit={onSubmit} onClose={onClose} theme={theme} />
+          <PromptBody
+            title={title}
+            initialValue={initialValue}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            onSubmit={onSubmit}
+            onClose={onClose}
+            theme={theme}
+          />
         )}
       </KeyboardAvoidingView>
     </Modal>
@@ -146,12 +167,16 @@ export function PromptDialog({
 function PromptBody({
   title,
   initialValue,
+  keyboardType,
+  placeholder,
   onSubmit,
   onClose,
   theme,
 }: {
   title: string;
   initialValue: string;
+  keyboardType?: KeyboardTypeOptions;
+  placeholder?: string;
   onSubmit: (value: string) => void;
   onClose: () => void;
   theme: ReturnType<typeof useTheme>;
@@ -171,6 +196,9 @@ function PromptBody({
         onChangeText={setValue}
         autoFocus
         selectTextOnFocus
+        keyboardType={keyboardType}
+        placeholder={placeholder}
+        placeholderTextColor={theme.textSecondary}
         returnKeyType="done"
         onSubmitEditing={submit}
         accessibilityLabel={title}

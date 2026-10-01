@@ -49,11 +49,14 @@ export function ScreenHeader({
   subtitle,
   right,
   collapse,
+  children,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   collapse?: CollapsingTitle;
+  /** Extra lines under the subtitle, e.g. the profile's weight change. */
+  children?: ReactNode;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -74,6 +77,7 @@ export function ScreenHeader({
             {subtitle}
           </ThemedText>
         )}
+        {children}
       </View>
       {right}
     </View>

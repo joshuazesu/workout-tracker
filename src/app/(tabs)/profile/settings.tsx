@@ -90,7 +90,7 @@ export default function SettingsScreen() {
         <Field key="weight" label="Weight">
           <TextInput
             value={profile.weightKg}
-            onChangeText={(v) => profileActions.update({ weightKg: v.replace(',', '.').replace(/[^\d.]/g, '') })}
+            onChangeText={(v) => profileActions.editWeight(v.replace(',', '.').replace(/[^\d.]/g, ''))}
             placeholder="0"
             placeholderTextColor={theme.textSecondary}
             keyboardType="decimal-pad"
