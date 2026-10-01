@@ -1,3 +1,17 @@
+import {
+  ArchivoNarrow_400Regular,
+  ArchivoNarrow_500Medium,
+  ArchivoNarrow_600SemiBold,
+  ArchivoNarrow_700Bold,
+} from '@expo-google-fonts/archivo-narrow';
+import {
+  Archivo_400Regular,
+  Archivo_500Medium,
+  Archivo_600SemiBold,
+  Archivo_700Bold,
+  Archivo_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/archivo';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +22,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useHeaderOptions } from '@/hooks/use-header-options';
 import { preloadSounds } from '@/lib/feedback';
 import { syncReminders } from '@/lib/reminders';
 import { useWorkoutStore } from '@/lib/workouts';
@@ -20,7 +35,19 @@ export default function RootLayout() {
   const { onboarded, history, challenge, appearance } = useWorkoutStore();
   const dark = colorScheme === 'dark';
   const colors = Colors[dark ? 'dark' : 'light'];
-  // Headers match the grouped background so large titles sit on the same grey as the content.
+  const headerOptions = useHeaderOptions();
+  const [fontsLoaded, fontError] = useFonts({
+    Archivo_400Regular,
+    Archivo_500Medium,
+    Archivo_600SemiBold,
+    Archivo_700Bold,
+    Archivo_800ExtraBold,
+    ArchivoNarrow_400Regular,
+    ArchivoNarrow_500Medium,
+    ArchivoNarrow_600SemiBold,
+    ArchivoNarrow_700Bold,
+  });
+  // Headers sit on the same paper as the content.
   const navTheme = {
     ...(dark ? DarkTheme : DefaultTheme),
     colors: {
@@ -43,13 +70,16 @@ export default function RootLayout() {
     syncReminders(history, challenge).catch(() => {});
   }, [history, challenge]);
 
+  // The splash screen stays up until the fonts are ready (the overlay hides it once it mounts).
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     // Needed for swipe gestures (swipe a set to delete it).
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navTheme}>
         <AnimatedSplashOverlay />
         <StatusBar style={dark ? "light" : "dark"} />
-        <Stack>
+        <Stack screenOptions={headerOptions}>
           <Stack.Protected guard={!onboarded}>
             <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           </Stack.Protected>
@@ -61,7 +91,6 @@ export default function RootLayout() {
               options={{
                 title: 'Add Exercise',
                 presentation: 'modal',
-                headerStyle: { backgroundColor: colors.backgroundPlain },
               }}
             />
             <Stack.Screen name="routine" options={{ presentation: 'modal' }} />

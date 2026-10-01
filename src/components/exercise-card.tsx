@@ -12,7 +12,7 @@ import Animated, {
 import { Icon } from '@/components/icon';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
@@ -47,9 +47,9 @@ export const ExerciseCard = memo(function ExerciseCard({
   const theme = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+    <View>
       <View style={styles.titleRow}>
-        <ThemedText type="headline" numberOfLines={1} style={styles.flex}>
+        <ThemedText type="title2" numberOfLines={1} style={styles.flex}>
           {exercise.name}
         </ThemedText>
         <Pressable
@@ -62,16 +62,16 @@ export const ExerciseCard = memo(function ExerciseCard({
               workoutActions.removeExercise(exercise.id)
             )
           }>
-          <Icon name={{ ios: 'xmark.circle.fill', md: 'cancel' }} size={22} color={theme.textSecondary} />
+          <Icon name={{ ios: 'xmark', md: 'close' }} size={18} color={theme.textSecondary} weight="semibold" />
         </Pressable>
       </View>
 
-      <View style={styles.row}>
+      <View style={[styles.row, styles.columns, { borderBottomColor: theme.text }]}>
         <ThemedText type="caption" themeColor="textSecondary" style={[styles.colSet, styles.header]}>
           SET
         </ThemedText>
         <ThemedText type="caption" themeColor="textSecondary" style={[styles.colPrevious, styles.header]}>
-          PREVIOUS
+          LAST
         </ThemedText>
         <ThemedText type="caption" themeColor="textSecondary" style={[styles.colInput, styles.header]}>
           KG
@@ -101,8 +101,8 @@ export const ExerciseCard = memo(function ExerciseCard({
         accessibilityRole="button"
         style={({ pressed }) => [styles.addSet, { opacity: pressed ? 0.6 : 1 }]}>
         <Icon name={{ ios: 'plus', md: 'add' }} size={15} color={theme.accent} weight="semibold" />
-        <ThemedText type="subheadline" style={{ color: theme.accent, fontWeight: 600 }}>
-          Add Set
+        <ThemedText type="callout" style={{ color: theme.accent, fontWeight: 600 }}>
+          Add set
         </ThemedText>
       </Pressable>
     </View>
@@ -124,12 +124,10 @@ function SetRow({
   suggestion?: { weight: string; reps: string };
 }) {
   const theme = useTheme();
+  // Open sets are underlined in the tint, like a blank on a log sheet; ticked ones are plain ink.
   const inputStyle = [
     styles.input,
-    {
-      color: theme.text,
-      backgroundColor: set.done ? 'transparent' : theme.fill,
-    },
+    { color: theme.text, borderBottomColor: set.done ? 'transparent' : theme.accent },
   ];
 
   const reduceMotion = useReducedMotion();
@@ -164,13 +162,13 @@ function SetRow({
   };
 
   return (
-    <SwipeAction label="Delete" onAction={remove} radius={10}>
+    <SwipeAction label="Delete" onAction={remove} background={theme.background}>
       <View
-        style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accentSoft }]}
+        style={[styles.row, styles.setRow, { borderBottomColor: theme.separator }]}
         accessibilityActions={[{ name: 'delete', label: 'Delete set' }]}
         onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && remove()}>
         <View style={styles.colSet}>
-          <ThemedText type="subheadline" numeric style={styles.setNumber}>
+          <ThemedText type="headline" numeric style={styles.setNumber}>
             {index + 1}
           </ThemedText>
         </View>
@@ -223,11 +221,11 @@ function SetRow({
             style={[
               styles.check,
               set.done
-                ? { backgroundColor: theme.accentFill, borderColor: theme.accentFill }
-                : { backgroundColor: 'transparent', borderColor: theme.outline },
+                ? { backgroundColor: theme.text, borderColor: theme.text }
+                : { backgroundColor: 'transparent', borderColor: theme.text },
               popStyle,
             ]}>
-            {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onAccent} weight="bold" />}
+            {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onText} weight="bold" />}
           </Animated.View>
         </Pressable>
       </View>
@@ -239,46 +237,38 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  card: {
-    borderRadius: Radius,
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.one,
-    paddingHorizontal: Spacing.two,
-    gap: Spacing.one,
-    borderCurve: 'continuous',
-  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: Spacing.two,
   },
   iconButton: {
     width: 44,
     height: 44,
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two,
+    gap: Spacing.two + 2,
+  },
+  columns: {
+    paddingBottom: 6,
+    borderBottomWidth: 1,
   },
   header: {
-    fontWeight: 600,
     textAlign: 'center',
   },
   setRow: {
-    borderRadius: 10,
-    paddingVertical: Spacing.one,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   colSet: {
-    width: 32,
-    alignItems: 'center',
+    width: 28,
+    alignItems: 'flex-start',
   },
   setNumber: {
-    textAlign: 'center',
-    fontWeight: 600,
+    fontWeight: 700,
   },
   colPrevious: {
     width: 64,
@@ -294,20 +284,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   colCheck: {
-    width: 44,
-    alignItems: 'center',
+    width: 40,
+    alignItems: 'flex-end',
   },
   input: {
-    height: 36,
-    borderRadius: 8,
-    fontSize: 17,
-    fontWeight: 600,
+    ...textStyle('title2', 700),
     fontVariant: ['tabular-nums'],
+    height: 38,
+    borderBottomWidth: 1.5,
   },
   check: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -315,8 +304,7 @@ const styles = StyleSheet.create({
   addSet: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.one,
-    minHeight: 44,
+    gap: Spacing.two,
+    minHeight: 48,
   },
 });

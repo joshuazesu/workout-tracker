@@ -36,10 +36,10 @@ export function WorkoutSummary({ workout, initiallyOpen = false }: { workout: Wo
       accessibilityRole="button"
       accessibilityState={{ expanded: open }}
       accessibilityHint="Shows every set. Long-press to delete."
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fillStrong }]}>
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fill }]}>
       <View style={styles.header}>
         <View style={styles.flex}>
-          <ThemedText type="headline" numberOfLines={1}>
+          <ThemedText type="title1" numberOfLines={1}>
             {workout.name || 'Workout'}
           </ThemedText>
           <ThemedText type="subheadline" themeColor="textSecondary" numeric numberOfLines={1}>
@@ -79,8 +79,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   row: {
-    paddingVertical: 12,
-    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three - 2,
     gap: Spacing.one,
   },
   header: {

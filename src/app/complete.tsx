@@ -11,13 +11,13 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { ChallengeDots } from '@/components/challenge-dots';
+import { DayBoxes } from '@/components/cards';
 import { Confetti } from '@/components/confetti';
 import { Icon } from '@/components/icon';
-import { Row, RowIconInset, Section, Separator } from '@/components/list';
+import { Row, Section, Separator } from '@/components/list';
 import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -71,8 +71,8 @@ export default function CompleteScreen() {
           <Badge trophy={wonChallenge} />
 
           <Animated.View entering={FadeInDown.delay(200).duration(300)} style={styles.center}>
-            <ThemedText type="largeTitle" style={styles.centerText}>
-              {wonChallenge ? 'Challenge Complete' : 'Workout Complete'}
+            <ThemedText type="display" style={styles.centerText}>
+              {wonChallenge ? 'Challenge complete' : 'Workout complete'}
             </ThemedText>
             <ThemedText type="body" themeColor="textSecondary" style={styles.centerText}>
               {wonChallenge && progress
@@ -95,7 +95,7 @@ export default function CompleteScreen() {
               </View>
               {previous && volumeDelta !== 0 && (
                 <>
-                  <Separator inset={0} />
+                  <Separator />
                   <View style={styles.compare}>
                     <Icon
                       name={
@@ -120,7 +120,7 @@ export default function CompleteScreen() {
 
           {records.length > 0 && (
             <Animated.View entering={FadeInDown.delay(400).duration(300)}>
-              <Section title="Personal Records" inset={RowIconInset}>
+              <Section title="Personal records">
                 {records.map((r) => (
                   <Row
                     key={r.name}
@@ -146,7 +146,7 @@ export default function CompleteScreen() {
           {countsTowardChallenge && progress && (
             <Animated.View entering={FadeInDown.delay(500).duration(300)}>
               <Section title={progress.title} padded>
-                <ChallengeDots done={progress.done} total={progress.days} animateLatest size={20} />
+                <DayBoxes done={progress.done} total={progress.days} doneToday />
                 <ThemedText type="subheadline" themeColor="textSecondary" numeric>
                   {progress.complete
                     ? `${progress.days} of ${progress.days} days. Done!`
@@ -167,7 +167,7 @@ export default function CompleteScreen() {
                   done();
                 }}
               />
-              <Button label="Not Now" variant="plain" onPress={done} />
+              <Button label="Not now" variant="plain" onPress={done} />
             </>
           ) : (
             <Button label="Done" onPress={done} />
@@ -209,9 +209,10 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: Spacing.three,
+    paddingHorizontal: Gutter,
     paddingTop: Spacing.five,
-    gap: Spacing.four,
+    paddingBottom: Spacing.three,
+    gap: Spacing.four + 2,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
@@ -239,7 +240,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   footer: {
-    padding: Spacing.three,
+    paddingHorizontal: Gutter,
+    paddingBottom: Spacing.three,
     paddingTop: Spacing.two,
     gap: Spacing.one,
     width: '100%',

@@ -4,11 +4,12 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 
 import { Button } from '@/components/button';
 import { ExerciseCard } from '@/components/exercise-card';
+import { ProgressRing } from '@/components/progress-ring';
 import { Icon } from '@/components/icon';
 import { REST_BAR_HEIGHT, RestTimer } from '@/components/rest-timer';
 import { ChoiceDialog } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing, TextStyles } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
@@ -38,6 +39,9 @@ export default function WorkoutScreen() {
 
   const completedSets = active.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
   const volume = Math.round(workoutVolume(active));
+  const totalSets = active.exercises.reduce((n, e) => n + e.sets.length, 0);
+  // The first exercise that still has an unticked set.
+  const next = active.exercises.find((e) => e.sets.some((s) => !s.done));
   const templateChanges = templateSetChanges(active, routines);
 
   const finish = () => {
@@ -86,8 +90,12 @@ export default function WorkoutScreen() {
           // The live timer is the title; the name is edited in the body.
           headerTitle: () => <Elapsed startedAt={active.startedAt} />,
           headerRight: () => (
-            <Pressable onPress={finish} hitSlop={10} accessibilityRole="button" style={styles.finishButton}>
-              <ThemedText type="headline" style={{ color: theme.accent }}>
+            <Pressable
+              onPress={finish}
+              hitSlop={6}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.finishButton, { backgroundColor: theme.text, opacity: pressed ? 0.8 : 1 }]}>
+              <ThemedText type="headline" themeColor="onText">
                 Finish
               </ThemedText>
             </Pressable>
@@ -103,21 +111,25 @@ export default function WorkoutScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentContainerStyle={[styles.content, active.restUntil ? { paddingBottom: REST_BAR_HEIGHT + Spacing.five } : null]}>
-          <View style={styles.titleBlock}>
-            <TextInput
-              value={active.name ?? ''}
-              onChangeText={workoutActions.rename}
-              placeholder="Workout"
-              placeholderTextColor={theme.textSecondary}
-              returnKeyType="done"
-              accessibilityLabel="Workout name"
-              style={[styles.nameInput, { color: theme.text }]}
-            />
-            {completedSets > 0 && (
-              <ThemedText type="subheadline" themeColor="textSecondary" numeric>
-                {completedSets} {completedSets === 1 ? 'set' : 'sets'} · {volume.toLocaleString()} kg
-              </ThemedText>
-            )}
+          {/* Status band: sets done as a ring, the name (editable), and what's lifted and next. */}
+          <View style={[styles.titleBlock, { borderBottomColor: theme.text }]}>
+            {totalSets > 0 && <ProgressRing value={completedSets} total={totalSets} />}
+            <View style={styles.flex}>
+              <TextInput
+                value={active.name ?? ''}
+                onChangeText={workoutActions.rename}
+                placeholder="Workout"
+                placeholderTextColor={theme.textSecondary}
+                returnKeyType="done"
+                accessibilityLabel="Workout name"
+                style={[styles.nameInput, { color: theme.text }]}
+              />
+              {totalSets > 0 && (
+                <ThemedText type="subheadline" themeColor="textSecondary" numeric numberOfLines={1}>
+                  {volume.toLocaleString()} kg lifted{next ? ` · ${next.name} next` : ' · all sets done'}
+                </ThemedText>
+              )}
+            </View>
           </View>
 
           {active.exercises.length === 0 && (
@@ -138,13 +150,13 @@ export default function WorkoutScreen() {
 
           <View style={styles.actions}>
             <Button
-              label="Add Exercise"
+              label="Add exercise"
               variant={active.exercises.length === 0 ? 'primary' : 'tinted'}
               icon={{ ios: 'plus', md: 'add' }}
               onPress={() => router.push('/add-exercise')}
             />
-            {completedSets > 0 && <Button label="Finish Workout" onPress={finish} />}
-            <Button label="Discard Workout" variant="destructive" onPress={discard} />
+            {completedSets > 0 && <Button label="Finish workout" onPress={finish} />}
+            <Button label="Discard workout" variant="destructive" onPress={discard} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -154,8 +166,8 @@ export default function WorkoutScreen() {
           visible={askTemplate}
           title={`Update “${templateChanges.routine.name}”?`}
           message="You changed the number of sets. Save the new counts to the template for next time?"
-          confirmLabel="Update Template"
-          cancelLabel="Keep Template As Is"
+          confirmLabel="Update template"
+          cancelLabel="Keep template as is"
           onConfirm={() => answerTemplate(true)}
           onCancel={() => answerTemplate(false)}>
           <View style={[styles.changes, { backgroundColor: theme.fill }]}>
@@ -190,25 +202,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Spacing.three,
-    gap: Spacing.three,
+    paddingHorizontal: Gutter,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
   titleBlock: {
-    paddingHorizontal: Spacing.one,
-    gap: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingBottom: Spacing.three - 2,
+    borderBottomWidth: 2,
   },
   nameInput: {
-    ...TextStyles.title1,
+    ...textStyle('display'),
+    fontSize: 44,
+    lineHeight: 48,
     paddingVertical: 0,
     // Web inputs have an intrinsic width and won't shrink to fit without this.
     minWidth: 0,
   },
   finishButton: {
-    paddingHorizontal: Spacing.two,
-    minHeight: 44,
+    paddingHorizontal: Spacing.three + 2,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
   },
   empty: {

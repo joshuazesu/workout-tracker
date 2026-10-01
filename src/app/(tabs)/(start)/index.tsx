@@ -5,16 +5,18 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 import { Button } from '@/components/button';
 import { ChallengeCard } from '@/components/cards';
 import { Icon } from '@/components/icon';
-import { Row, RowIconInset, Section } from '@/components/list';
-import { SwipeAction } from '@/components/swipe-action';
+import { Section } from '@/components/list';
+import { ScreenHeader } from '@/components/screen-header';
 import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
+import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
 import {
+  defaultSetCount,
   formatDuration,
   MAX_ROUTINES,
   type Routine,
@@ -30,12 +32,28 @@ function limitReached() {
   else Alert.alert('Template limit reached', message);
 }
 
+/** "Wed 1 Oct · Week 40" */
+function todayLine(now: number) {
+  const date = new Date(now);
+  const jan1 = new Date(date.getFullYear(), 0, 1);
+  const week = Math.ceil(((date.getTime() - jan1.getTime()) / 86_400_000 + jan1.getDay() + 1) / 7);
+  return `${date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} · Week ${week}`;
+}
+
 export default function StartScreen() {
   const theme = useTheme();
-  const { active, routines } = useWorkoutStore();
+  const { active, routines, history } = useWorkoutStore();
+  const now = useNow(60_000);
   const [menuFor, setMenuFor] = useState<Routine | null>(null);
   const [renaming, setRenaming] = useState<Routine | null>(null);
   const atLimit = routines.length >= MAX_ROUTINES;
+
+  // Suggest the template it's been longest since (or one never done): the next in the rotation.
+  const lastDone = (r: Routine) => history.find((w) => w.name === r.name)?.startedAt ?? 0;
+  const suggested = routines.reduce<Routine | undefined>(
+    (best, r) => (!best || lastDone(r) < lastDone(best) ? r : best),
+    undefined
+  );
 
   const start = (routineId?: string) => {
     feedback.tap();
@@ -57,28 +75,25 @@ export default function StartScreen() {
     { label: 'Rename', onPress: () => setRenaming(r) },
     { label: 'Edit Exercises', onPress: () => edit(r.id) },
     { label: 'Duplicate', onPress: () => routineActions.duplicate(r.id) || limitReached() },
-    {
-      label: 'Delete',
-      destructive: true,
-      onPress: () => deleteTemplate(r),
-    },
+    { label: 'Delete', destructive: true, onPress: () => deleteTemplate(r) },
   ];
 
   return (
     <>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ backgroundColor: theme.background }}
-        contentContainerStyle={styles.content}>
+      <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content}>
+        <ScreenHeader title="Today’s log" subtitle={todayLine(now)} />
+
         {active && <ResumeCard workout={active} />}
 
         <ChallengeCard />
 
         <Section title="Templates" trailing={`${routines.length} of ${MAX_ROUTINES}`}>
           {routines.map((r) => (
-            <SwipeAction key={r.id} label="Delete" onAction={() => deleteTemplate(r)}>
+            <SwipeAction key={r.id} label="Delete" onAction={() => deleteTemplate(r)} background={theme.background}>
               <TemplateRow
                 routine={r}
+                setCount={r.exercises.reduce((n, name) => n + defaultSetCount(r, name, history), 0)}
+                highlighted={r.id === suggested?.id}
                 canStart={!active}
                 onStart={() => start(r.id)}
                 onMenu={() => setMenuFor(r)}
@@ -86,33 +101,18 @@ export default function StartScreen() {
               />
             </SwipeAction>
           ))}
-          <Row
+          <LinkRow
             key="new"
-            label={atLimit ? `Limit of ${MAX_ROUTINES} reached` : 'New Template'}
-            icon={{ ios: 'plus.circle.fill', md: 'add_circle' }}
-            iconColor={atLimit ? theme.textSecondary : theme.accent}
+            label={atLimit ? `Limit of ${MAX_ROUTINES} reached` : 'New template'}
             color={atLimit ? theme.textSecondary : theme.accent}
             onPress={() => edit()}
           />
+          {!active && <LinkRow key="empty" label="Empty workout" color={theme.accent} onPress={() => start()} />}
         </Section>
         {routines.length === 0 && (
-          <ThemedText type="footnote" themeColor="textSecondary" style={styles.hint}>
+          <ThemedText type="footnote" themeColor="textSecondary">
             Templates are workouts you repeat, like “Push Day”. Create one to start it in a tap.
           </ThemedText>
-        )}
-
-        {!active && (
-          <Section inset={RowIconInset}>
-            <Row
-              label="Start Empty Workout"
-              detail="Add exercises as you go"
-              icon={{ ios: 'square.and.pencil', md: 'edit_square' }}
-              // A navigation row, not a primary action, so the tint stays rationed to the Start buttons.
-              iconColor={theme.textSecondary}
-              onPress={() => start()}
-              chevron
-            />
-          </Section>
         )}
       </ScrollView>
 
@@ -129,35 +129,47 @@ export default function StartScreen() {
 }
 
 /**
- * The workout in progress. While one runs, this is the only filled button on the screen.
+ * The workout in progress. While one runs, Resume is the only filled button on the screen.
  * Swipe it left to discard the workout.
  */
 function ResumeCard({ workout }: { workout: Workout }) {
+  const theme = useTheme();
   const now = useNow(1000);
   const sets = workout.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
   const discard = () =>
     confirm('Discard workout', 'All sets in this workout will be lost.', 'Discard', workoutActions.discard);
   return (
-    <Section title="In Progress">
-      <SwipeAction label="Discard" icon={{ ios: 'xmark.bin', md: 'delete_forever' }} onAction={discard}>
+    <Section title="In progress">
+      <SwipeAction
+        label="Discard"
+        icon={{ ios: 'xmark.bin', md: 'delete_forever' }}
+        onAction={discard}
+        background={theme.background}>
         <View
           style={styles.resume}
           accessibilityActions={[{ name: 'discard', label: 'Discard workout' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'discard' && discard()}>
           <View style={styles.resumeRow}>
             <View style={styles.flex}>
-              <ThemedText type="headline" numberOfLines={1}>
+              <ThemedText type="title1" numberOfLines={1}>
                 {workout.name || 'Workout'}
               </ThemedText>
               <ThemedText type="subheadline" themeColor="textSecondary" numeric>
                 {sets} {sets === 1 ? 'set' : 'sets'} done
               </ThemedText>
             </View>
-            <ThemedText type="title2" numeric accessibilityLabel={`Elapsed ${formatDuration(now - workout.startedAt)}`}>
+            <ThemedText
+              type="largeTitle"
+              numeric
+              accessibilityLabel={`Elapsed ${formatDuration(now - workout.startedAt)}`}>
               {formatDuration(now - workout.startedAt)}
             </ThemedText>
           </View>
-          <Button label="Resume Workout" icon={{ ios: 'play.fill', md: 'play_arrow' }} onPress={() => router.push('/workout')} />
+          <Button
+            label="Resume workout"
+            icon={{ ios: 'play.fill', md: 'play_arrow' }}
+            onPress={() => router.push('/workout')}
+          />
         </View>
       </SwipeAction>
     </Section>
@@ -166,29 +178,35 @@ function ResumeCard({ workout }: { workout: Workout }) {
 
 function TemplateRow({
   routine,
+  setCount,
+  highlighted,
   canStart,
   onStart,
   onMenu,
   onDelete,
 }: {
   routine: Routine;
+  setCount: number;
+  /** The suggested next template gets the filled play button. */
+  highlighted: boolean;
   canStart: boolean;
   onStart: () => void;
   onMenu: () => void;
   onDelete: () => void;
 }) {
   const theme = useTheme();
+  const exercises = routine.exercises.length;
   return (
     <View
       style={styles.template}
       accessibilityActions={[{ name: 'delete', label: 'Delete template' }]}
       onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}>
       <View style={styles.flex}>
-        <ThemedText type="headline" numberOfLines={1}>
+        <ThemedText type="title1" numberOfLines={1}>
           {routine.name}
         </ThemedText>
-        <ThemedText type="footnote" themeColor="textSecondary" numberOfLines={2}>
-          {routine.exercises.join(', ')}
+        <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+          {exercises} {exercises === 1 ? 'exercise' : 'exercises'} · {setCount} {setCount === 1 ? 'set' : 'sets'}
         </ThemedText>
       </View>
       <Pressable
@@ -196,20 +214,41 @@ function TemplateRow({
         hitSlop={4}
         accessibilityRole="button"
         accessibilityLabel={`${routine.name} options`}
-        style={({ pressed }) => [styles.menuButton, pressed && { backgroundColor: theme.fillStrong }]}>
-        <Icon name={{ ios: 'ellipsis', md: 'more_horiz' }} size={18} color={theme.textSecondary} weight="semibold" />
+        style={({ pressed }) => [styles.menuButton, pressed && { backgroundColor: theme.fill }]}>
+        <Icon name={{ ios: 'ellipsis', md: 'more_horiz' }} size={20} color={theme.text} weight="semibold" />
       </Pressable>
       {canStart && (
-        <Button
-          label="Start"
-          size="small"
-          variant="tinted"
-          icon={{ ios: 'play.fill', md: 'play_arrow' }}
+        <Pressable
           onPress={onStart}
+          accessibilityRole="button"
           accessibilityLabel={`Start ${routine.name}`}
-        />
+          style={({ pressed }) => [
+            styles.play,
+            highlighted ? { backgroundColor: theme.accentFill } : { borderWidth: 1.5, borderColor: theme.text },
+            { transform: [{ scale: pressed ? 0.94 : 1 }] },
+          ]}>
+          <Icon
+            name={{ ios: 'play.fill', md: 'play_arrow' }}
+            size={20}
+            color={highlighted ? theme.onAccent : theme.text}
+          />
+        </Pressable>
       )}
     </View>
+  );
+}
+
+function LinkRow({ label, color, onPress }: { label: string; color: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}>
+      <Icon name={{ ios: 'plus', md: 'add' }} size={18} color={color} weight="semibold" />
+      <ThemedText type="callout" style={{ color, fontWeight: 600 }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -218,19 +257,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Spacing.three,
-    gap: Spacing.four,
+    paddingHorizontal: Gutter,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four + 2,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  hint: {
-    marginTop: -Spacing.three,
-    paddingHorizontal: Spacing.three,
-  },
   resume: {
-    padding: Spacing.three,
-    gap: Spacing.three,
+    paddingVertical: Spacing.three - 4,
+    gap: Spacing.three - 4,
   },
   resumeRow: {
     flexDirection: 'row',
@@ -241,16 +277,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    paddingVertical: 12,
-    paddingLeft: Spacing.three,
-    paddingRight: Spacing.three - 4,
-    minHeight: 64,
+    paddingVertical: Spacing.three - 2,
   },
   menuButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  play: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  link: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 48,
   },
 });

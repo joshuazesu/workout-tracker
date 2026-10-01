@@ -1,12 +1,10 @@
 import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { ChallengeDots } from '@/components/challenge-dots';
 import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
-import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { useRemindersEnabled } from '@/lib/reminders';
@@ -17,9 +15,49 @@ import {
   startOfDay,
   startOfWeek,
   useWorkoutStore,
-  weekStreak,
   workoutActions,
 } from '@/lib/workouts';
+
+/**
+ * One box per workout day the challenge needs: ink with a tick once earned, outlined in blue for
+ * today's slot while it's still open, empty for the rest.
+ */
+export function DayBoxes({ done, total, doneToday }: { done: number; total: number; doneToday: boolean }) {
+  const theme = useTheme();
+  return (
+    <View
+      style={styles.days}
+      accessible
+      accessibilityLabel={`${done} of ${total} workout days done${doneToday ? ', including today' : ''}`}>
+      {Array.from({ length: total }, (_, i) => {
+        const earned = i < done;
+        const today = !doneToday && i === done;
+        return (
+          <View key={i} style={styles.day}>
+            <View
+              style={[
+                styles.box,
+                earned
+                  ? { backgroundColor: theme.text }
+                  : today
+                    ? { borderWidth: 2, borderColor: theme.accent }
+                    : { borderWidth: 1, borderColor: theme.outline },
+              ]}>
+              {earned && <Icon name={{ ios: 'checkmark', md: 'check' }} size={16} color={theme.onText} weight="bold" />}
+            </View>
+            <ThemedText
+              type="footnote"
+              themeColor={today ? 'accent' : 'textSecondary'}
+              style={today ? styles.todayLabel : undefined}
+              numeric>
+              {today ? 'Today' : i + 1}
+            </ThemedText>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 /** Current challenge progress, or an offer to start the next one. */
 export function ChallengeCard() {
@@ -31,14 +69,11 @@ export function ChallengeCard() {
     const lastTrophy = trophies.at(-1);
     const offer = lastTrophy ? CHALLENGES[lastTrophy.id].next : 'kickstart';
     return (
-      <Section title="Challenge" padded>
-        <View style={styles.text}>
-          <ThemedText type="headline">{CHALLENGES[offer].title}</ThemedText>
-          <ThemedText type="subheadline" themeColor="textSecondary">
-            {CHALLENGES[offer].blurb}
-          </ThemedText>
-        </View>
-        <Button label="Start Challenge" variant="tinted" onPress={() => workoutActions.startChallenge(offer)} />
+      <Section title={CHALLENGES[offer].title} padded>
+        <ThemedText type="subheadline" themeColor="textSecondary">
+          {CHALLENGES[offer].blurb}
+        </ThemedText>
+        <Button label="Start challenge" variant="tinted" onPress={() => workoutActions.startChallenge(offer)} />
       </Section>
     );
   }
@@ -48,14 +83,13 @@ export function ChallengeCard() {
 
   if (p.complete) {
     return (
-      <Section title="Challenge" padded>
-        <View style={styles.titleRow}>
-          <Icon name={{ ios: 'trophy.fill', md: 'trophy' }} size={20} color={theme.accent} />
-          <ThemedText type="headline">{p.title} complete</ThemedText>
+      <Section title={`${p.title} complete`} padded>
+        <View style={styles.row}>
+          <Icon name={{ ios: 'trophy.fill', md: 'trophy' }} size={22} color={theme.accent} />
+          <ThemedText type="subheadline" themeColor="textSecondary" style={styles.flex}>
+            {trophies.length} {trophies.length === 1 ? 'trophy' : 'trophies'} earned. Ready for the next one?
+          </ThemedText>
         </View>
-        <ThemedText type="subheadline" themeColor="textSecondary">
-          {trophies.length} {trophies.length === 1 ? 'trophy' : 'trophies'} earned. Ready for the next one?
-        </ThemedText>
         <Button
           label={`Start ${CHALLENGES[next].title}`}
           variant="tinted"
@@ -67,37 +101,28 @@ export function ChallengeCard() {
 
   if (p.expired) {
     return (
-      <Section title="Challenge" padded>
-        <View style={styles.text}>
-          <ThemedText type="headline">{p.title} ended</ThemedText>
-          <ThemedText type="subheadline" themeColor="textSecondary">
-            You got {p.done} of {p.days} days. That still counts. Run it back?
-          </ThemedText>
-        </View>
-        <Button label="Try Again" variant="tinted" onPress={() => workoutActions.startChallenge(challenge.id)} />
+      <Section title={`${p.title} ended`} padded>
+        <ThemedText type="subheadline" themeColor="textSecondary">
+          You got {p.done} of {p.days} days. That still counts. Run it back?
+        </ThemedText>
+        <Button label="Try again" variant="tinted" onPress={() => workoutActions.startChallenge(challenge.id)} />
       </Section>
     );
   }
 
   return (
-    <Section title="Challenge" trailing={`${p.daysLeft} ${p.daysLeft === 1 ? 'day' : 'days'} left`} padded>
-      <ThemedText type="headline">{p.title}</ThemedText>
-      <ChallengeDots done={p.done} total={p.days} size={18} />
-      <View style={styles.titleRow}>
-        {p.doneToday && (
-          <Icon name={{ ios: 'checkmark.circle.fill', md: 'check_circle' }} size={16} color={theme.accent} />
-        )}
-        <ThemedText type="subheadline" themeColor="textSecondary" numeric>
-          {p.done} of {p.days} days. {p.doneToday ? 'Today’s done.' : 'Work out today to stay on track.'}
-        </ThemedText>
-      </View>
+    <Section title={p.title} trailing={`${p.daysLeft} ${p.daysLeft === 1 ? 'day' : 'days'} left`} padded>
+      <DayBoxes done={p.done} total={p.days} doneToday={p.doneToday} />
     </Section>
   );
 }
 
 const WEEKS = 12;
 
-/** GitHub-style grid of the last 12 weeks: one column per week, one cell per day. */
+/**
+ * The habit grid: the last 12 weeks, one column per week and one square per day, shaded in blue by
+ * how many workouts that day had. Today is outlined.
+ */
 export function ConsistencyCard() {
   const theme = useTheme();
   const { history } = useWorkoutStore();
@@ -108,22 +133,16 @@ export function ConsistencyCard() {
   for (const w of history) perDay.set(dayKey(w.startedAt), (perDay.get(dayKey(w.startedAt)) ?? 0) + 1);
 
   const gap = 4;
-  const inner = Math.min(width, MaxContentWidth) - Spacing.three * 4;
-  const cell = Math.min(22, Math.floor((inner - gap * (WEEKS - 1)) / WEEKS));
+  const inner = Math.min(width, MaxContentWidth) - Gutter * 2;
+  const cell = Math.min(26, Math.floor((inner - gap * (WEEKS - 1)) / WEEKS));
   const firstWeek = new Date(startOfWeek(now));
   firstWeek.setDate(firstWeek.getDate() - (WEEKS - 1) * 7);
   const today = startOfDay(now);
-
   const thisWeek = history.filter((w) => w.startedAt >= startOfWeek(now)).length;
-  const streak = weekStreak(history, now);
+  const shade = (count: number) => (count === 0 ? theme.fill : count === 1 ? theme.accentMid : theme.accent);
 
   return (
-    <Section title="Consistency" padded>
-      <View style={styles.statsRow}>
-        <Stat label="This week" value={String(thisWeek)} />
-        <Stat label="Week streak" value={String(streak)} />
-        <Stat label="All time" value={String(history.length)} />
-      </View>
+    <Section title={`Last ${WEEKS} weeks`} trailing={`${thisWeek} this week`} padded>
       <View style={[styles.grid, { gap }]}>
         {Array.from({ length: WEEKS }, (_, week) => (
           <View key={week} style={{ gap }}>
@@ -132,7 +151,6 @@ export function ConsistencyCard() {
               const date = new Date(firstWeek);
               date.setDate(date.getDate() + week * 7 + day);
               const ts = date.getTime();
-              const count = perDay.get(dayKey(ts)) ?? 0;
               const future = ts > today;
               return (
                 <View
@@ -140,11 +158,10 @@ export function ConsistencyCard() {
                   style={{
                     width: cell,
                     height: cell,
-                    borderRadius: cell / 4,
-                    backgroundColor: future ? 'transparent' : count === 0 ? theme.fill : theme.accent,
-                    opacity: count === 1 ? 0.65 : 1,
-                    borderWidth: ts === today ? 1.5 : 0,
-                    borderColor: theme.textSecondary,
+                    borderRadius: 4,
+                    backgroundColor: future ? 'transparent' : shade(perDay.get(dayKey(ts)) ?? 0),
+                    borderWidth: ts === today ? 2 : 0,
+                    borderColor: theme.text,
                   }}
                 />
               );
@@ -152,13 +169,21 @@ export function ConsistencyCard() {
           </View>
         ))}
       </View>
-      <View style={styles.gridLegend}>
-        <ThemedText type="caption" themeColor="textSecondary">
+      <View style={styles.legend}>
+        <ThemedText type="footnote" themeColor="textSecondary">
           {WEEKS} weeks ago
         </ThemedText>
-        <ThemedText type="caption" themeColor="textSecondary">
-          This week
-        </ThemedText>
+        <View style={styles.key} accessible accessibilityLabel="Lighter squares mean fewer workouts that day">
+          <ThemedText type="footnote" themeColor="textSecondary">
+            Less
+          </ThemedText>
+          {[0, 1, 2].map((n) => (
+            <View key={n} style={[styles.swatch, { backgroundColor: shade(n) }]} />
+          ))}
+          <ThemedText type="footnote" themeColor="textSecondary">
+            More
+          </ThemedText>
+        </View>
       </View>
       {history.length === 0 && (
         <ThemedText type="subheadline" themeColor="textSecondary">
@@ -176,13 +201,13 @@ export function RemindersPrompt() {
   if (Platform.OS === 'web' || enabled !== false) return null;
   return (
     <Section title="Reminders" padded>
-      <View style={styles.titleRow}>
-        <Icon name={{ ios: 'bell.badge', md: 'notifications_active' }} size={20} color={theme.accent} />
+      <View style={styles.row}>
+        <Icon name={{ ios: 'bell.badge', md: 'notifications_active' }} size={22} color={theme.accent} />
         <ThemedText type="subheadline" themeColor="textSecondary" style={styles.flex}>
           Get a nudge when it’s been a while since your last workout.
         </ThemedText>
       </View>
-      <Button label="Turn On Reminders" variant="tinted" onPress={turnOn} />
+      <Button label="Turn on reminders" variant="tinted" onPress={turnOn} />
     </Section>
   );
 }
@@ -191,24 +216,48 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  text: {
-    gap: 2,
-  },
-  titleRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three - 4,
   },
-  statsRow: {
+  days: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: Spacing.two,
+  },
+  day: {
+    width: `${100 / 7}%`,
+    alignItems: 'center',
+    gap: 6,
+  },
+  box: {
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayLabel: {
+    fontWeight: 600,
   },
   grid: {
     flexDirection: 'row',
     alignSelf: 'center',
   },
-  gridLegend: {
+  legend: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -Spacing.two,
+    alignItems: 'center',
+  },
+  key: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  swatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
   },
 });

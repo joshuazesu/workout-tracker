@@ -6,7 +6,7 @@ import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Row, Section } from '@/components/list';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing, TextStyles } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
@@ -60,12 +60,12 @@ export default function SettingsScreen() {
       <Pressable onPress={pickPhoto} style={styles.photo} accessibilityLabel="Change profile photo">
         <Avatar profile={profile} size={96} />
         <ThemedText type="subheadline" style={{ color: theme.accent, fontWeight: 600 }}>
-          {profile.photoUri ? 'Change Photo' : 'Add Photo'}
+          {profile.photoUri ? 'Change photo' : 'Add photo'}
         </ThemedText>
       </Pressable>
 
-      <View style={[styles.group, { backgroundColor: theme.surface }]}>
-        <Field label="Name">
+      <Section title="Details">
+        <Field key="name" label="Name">
           <TextInput
             value={profile.name}
             onChangeText={(name) => profileActions.update({ name })}
@@ -76,8 +76,7 @@ export default function SettingsScreen() {
             style={inputStyle}
           />
         </Field>
-        <Divider />
-        <Field label="Height">
+        <Field key="height" label="Height">
           <TextInput
             value={profile.heightCm}
             onChangeText={(v) => profileActions.update({ heightCm: v.replace(/[^\d.]/g, '') })}
@@ -88,8 +87,7 @@ export default function SettingsScreen() {
           />
           <ThemedText themeColor="textSecondary">cm</ThemedText>
         </Field>
-        <Divider />
-        <Field label="Weight">
+        <Field key="weight" label="Weight">
           <TextInput
             value={profile.weightKg}
             onChangeText={(v) => profileActions.update({ weightKg: v.replace(',', '.').replace(/[^\d.]/g, '') })}
@@ -100,12 +98,11 @@ export default function SettingsScreen() {
           />
           <ThemedText themeColor="textSecondary">kg</ThemedText>
         </Field>
-      </View>
+      </Section>
 
       <Section
         title="Appearance"
-        footer="System follows your phone’s Light or Dark setting."
-        style={styles.appearance}>
+        footer="System follows your phone’s Light or Dark setting.">
         {APPEARANCES.map((a) => (
           <Row
             key={a.value}
@@ -124,28 +121,23 @@ export default function SettingsScreen() {
         ))}
       </Section>
 
-      <ThemedText type="title3" style={styles.groupTitle} accessibilityRole="header">
-        Data
-      </ThemedText>
-      <Pressable
-        onPress={() =>
-          confirm(
-            'Reset all tracking?',
-            `This permanently deletes ${history.length} logged ${history.length === 1 ? 'workout' : 'workouts'}, your challenge progress and trophies. Your profile and templates are kept.`,
-            'Reset',
-            () => {
-              workoutActions.resetHistory();
-              feedback.tap();
-            }
-          )
-        }
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.group, styles.danger, { backgroundColor: pressed ? theme.fillStrong : theme.surface }]}>
-        <ThemedText style={{ color: theme.destructive }}>Reset Tracking History</ThemedText>
-      </Pressable>
-      <ThemedText type="footnote" themeColor="textSecondary" style={styles.groupLabel}>
-        Start fresh. Deletes every workout, challenge and trophy. This can’t be undone.
-      </ThemedText>
+      <Section title="Data" footer="Start fresh. Deletes every workout, challenge and trophy. This can’t be undone.">
+        <Row
+          label="Reset tracking history"
+          color={theme.destructive}
+          onPress={() =>
+            confirm(
+              'Reset all tracking?',
+              `This permanently deletes ${history.length} logged ${history.length === 1 ? 'workout' : 'workouts'}, your challenge progress and trophies. Your profile and templates are kept.`,
+              'Reset',
+              () => {
+                workoutActions.resetHistory();
+                feedback.tap();
+              }
+            )
+          }
+        />
+      </Section>
     </ScrollView>
   );
 }
@@ -159,15 +151,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Divider() {
-  const theme = useTheme();
-  return <View style={[styles.divider, { backgroundColor: theme.separator }]} />;
-}
-
 const styles = StyleSheet.create({
   content: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+    paddingHorizontal: Gutter,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four + 2,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
@@ -175,45 +164,21 @@ const styles = StyleSheet.create({
   photo: {
     alignItems: 'center',
     gap: Spacing.two,
-    paddingVertical: Spacing.three,
-  },
-  group: {
-    borderRadius: Radius,
-    paddingHorizontal: Spacing.three,
-    borderCurve: 'continuous',
-  },
-  groupLabel: {
-    paddingHorizontal: Spacing.three,
-  },
-  appearance: {
-    marginTop: Spacing.three,
-  },
-  groupTitle: {
-    fontWeight: 700,
-    paddingHorizontal: Spacing.one,
-    marginTop: Spacing.three,
+    paddingTop: Spacing.two,
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    minHeight: 44,
+    minHeight: 48,
   },
   fieldLabel: {
     width: 72,
   },
   input: {
-    ...TextStyles.body,
+    ...textStyle('body'),
     flex: 1,
     minWidth: 0,
-    paddingVertical: 11,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-  },
-  danger: {
-    paddingVertical: 11,
-    minHeight: 44,
-    justifyContent: 'center',
+    paddingVertical: 12,
   },
 });

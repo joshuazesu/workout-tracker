@@ -1,243 +1,227 @@
 ---
 name: Workout Tracker
-description: A habit-first iPhone workout log in the native grouped-list idiom.
+description: A habit-first iPhone workout log, set like a training ledger.
 colors:
-  tint-blue: "#0064D2"
-  tint-blue-dark: "#0A84FF"
-  tint-blue-fill-dark: "#0060DF"
-  tint-blue-soft: "#0064D21A"
-  on-tint: "#FFFFFF"
-  label: "#000000"
-  secondary-label: "#6C6C70"
-  secondary-label-dark: "#AEAEB2"
-  grouped-background: "#F2F2F7"
-  plain-background: "#FFFFFF"
-  surface: "#FFFFFF"
-  surface-dark: "#1C1C1E"
-  fill: "#EFEFF4"
-  fill-strong: "#E3E3E8"
-  separator: "#C6C6C8"
-  outline: "#8E8E93"
-  destructive-red: "#D70015"
-  destructive-red-dark: "#FF453A"
+  ink: "#0E1116"
+  ink-dark: "#F1F3F6"
+  muted: "#5B6470"
+  muted-dark: "#9AA3AF"
+  paper: "#FFFFFF"
+  paper-dark: "#0B0D10"
+  surface: "#F4F6F9"
+  surface-dark: "#151A21"
+  fill: "#E9EDF2"
+  fill-dark: "#1A2029"
+  rule: "#D9DEE5"
+  rule-dark: "#262C35"
+  outline: "#7D8592"
+  outline-dark: "#6B7583"
+  blue: "#0B5FD6"
+  blue-dark: "#4C95FF"
+  blue-fill-dark: "#1F6FEB"
+  blue-mid: "#7FA9EA"
+  blue-mid-dark: "#2D6FD6"
+  destructive: "#D70015"
+  destructive-dark: "#FF453A"
 typography:
-  large-title:
-    fontFamily: "System (SF Pro)"
-    fontSize: "34px"
+  display:
+    fontFamily: "Archivo Narrow"
+    fontSize: "48px"
     fontWeight: 700
-    lineHeight: "41px"
+    lineHeight: "50px"
+    letterSpacing: "-1px"
+  large-title:
+    fontFamily: "Archivo Narrow"
+    fontSize: "38px"
+    fontWeight: 700
+    lineHeight: "42px"
   title1:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo Narrow"
     fontSize: "28px"
     fontWeight: 700
-    lineHeight: "34px"
+    lineHeight: "32px"
   title2:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "22px"
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: "28px"
   title3:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "20px"
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: "25px"
   headline:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "17px"
     fontWeight: 600
     lineHeight: "22px"
   body:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "17px"
     fontWeight: 400
     lineHeight: "22px"
   subheadline:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: "20px"
   footnote:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "13px"
     fontWeight: 400
     lineHeight: "18px"
   caption:
-    fontFamily: "System (SF Pro)"
+    fontFamily: "Archivo"
     fontSize: "12px"
-    fontWeight: 400
+    fontWeight: 600
     lineHeight: "16px"
 rounded:
-  input: "8px"
-  search: "10px"
-  section: "14px"
-  capsule: "999px"
+  box: "4px"
+  surface: "14px"
+  pill: "999px"
 spacing:
-  hairline: "2px"
   xs: "4px"
   sm: "8px"
   md: "16px"
+  gutter: "22px"
   lg: "24px"
   xl: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.tint-blue}"
-    textColor: "{colors.on-tint}"
+    backgroundColor: "{colors.blue}"
+    textColor: "{colors.paper}"
     typography: "{typography.headline}"
-    rounded: "{rounded.section}"
-    height: "50px"
+    rounded: "{rounded.pill}"
+    height: "52px"
   button-tinted:
-    backgroundColor: "{colors.tint-blue-soft}"
-    textColor: "{colors.tint-blue}"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
     typography: "{typography.headline}"
-    rounded: "{rounded.section}"
-    height: "50px"
-  button-tinted-small:
-    backgroundColor: "{colors.tint-blue-soft}"
-    textColor: "{colors.tint-blue}"
-    typography: "{typography.subheadline}"
-    rounded: "{rounded.capsule}"
-    height: "32px"
-  section:
+    rounded: "{rounded.pill}"
+    height: "52px"
+  play-button:
+    backgroundColor: "{colors.blue}"
+    rounded: "{rounded.pill}"
+    size: "52px"
+  set-box:
+    backgroundColor: "{colors.ink}"
+    rounded: "{rounded.box}"
+    size: "36px"
+  trophy-card:
     backgroundColor: "{colors.surface}"
-    rounded: "{rounded.section}"
-    padding: "16px"
-  set-input:
-    backgroundColor: "{colors.fill}"
-    textColor: "{colors.label}"
-    rounded: "{rounded.input}"
-    height: "36px"
-  search-field:
-    backgroundColor: "{colors.fill}"
-    textColor: "{colors.label}"
-    rounded: "{rounded.search}"
-    height: "36px"
+    rounded: "{rounded.surface}"
+    padding: "14px"
+  rest-band:
+    backgroundColor: "{colors.blue}"
+    textColor: "{colors.paper}"
 ---
 
 # Design System: Workout Tracker
 
 ## Overview
 
-**Creative North Star: "The Quiet Logbook"**
+**Creative North Star: "The Logbook"**
 
-The app should feel like it shipped on the iPhone, sitting between Apple Fitness and Health. Screens are inset grouped lists on the system grey. Content sits in white rounded sections with hairline separators, and SF Symbols are the only icons. The system type ramp carries the hierarchy, so there is no display face and no decoration.
+A training ledger on a phone. Each screen is plain paper with ink rules: a big condensed title closed by a heavy rule, then ruled lists. Blue marks what you act on and what you've built up: the play button for the suggested workout, the habit grid, records and the rest band. Ink marks what's done: ticked sets and earned challenge days fill black (white in dark mode), the way you'd fill in a box on a log sheet.
 
-Calm is the default, and dark mode is true black. Blue is the single tint, and it marks only what the user should act on or has earned: a Start or Resume button, a ticked set, challenge progress, a personal record. Everything else is label, secondary label and grey. The loudest moments are the ones the product is about: ticking a set, finishing a workout, winning a challenge.
+It's a mix of three explored directions. The overall ledger is from "Logbook". The habit grid's blue ramp and the trophy cards are from "Night Session". The workout's progress-ring status band is from "Bright Calm".
 
 **Key Characteristics:**
-- Grouped grey background, white 14 pt continuous-corner sections, hairline separators inset to the text.
-- The iOS text styles from Large Title down to Caption; no other sizes.
-- One tint, rationed to about four uses per screen.
-- SF Symbols on iOS, matching Material Symbols on Android and web; never emoji or text glyphs as icons.
-- Light and dark appearances are both first-class.
+- Paper and ink, with no cards in the main flow. Rules carry the structure.
+- Archivo Narrow for titles and big numbers, Archivo for everything else.
+- One blue, used sparingly. Ink, not blue, for completion.
+- Pills and circles for buttons, square 4 px boxes for things you tick.
+- Light and dark appearances are both first-class (Settings › Appearance).
 
 ## Colors
 
-A neutral iOS system palette with one rationed blue tint.
-
 ### Primary
-- **Logbook Blue** (#0064D2 light / #0A84FF dark): the only interactive tint, for text, icons and outlines. It's a deeper blue than iOS's #007AFF, which only reaches 4.0:1 on white; this one reaches 5.6:1. Used for tinted buttons, ticked sets, challenge dots, the consistency grid, header bar buttons and the active tab.
-- **Blue Fill** (#0064D2 light / #0060DF dark): the tint behind white text, i.e. primary buttons, ticked set boxes and calendar workout days. Dark mode needs the deeper fill because white on #0A84FF is only 3.6:1.
-- **Soft Blue** (#0064D2 at 10% / #0A84FF at 16%): tinted button fills and the wash behind a ticked set row.
+- **Logbook Blue** (#0B5FD6 light / #4C95FF dark): text, icons and outlines in the tint. The rest band, primary pills and the suggested play button use **Blue Fill** (#0B5FD6 / #1F6FEB), which keeps white text at 4.6:1 or better.
+- **Blue Mid** (#7FA9EA / #2D6FD6): the middle step of the habit grid (one workout that day).
 
 ### Neutral
-- **Label** (#000000 / #FFFFFF): primary text.
-- **Secondary Label** (#6C6C70 / #AEAEB2): metadata, captions, section trailing text. Passes 4.5:1 on both the grouped background and white sections.
-- **Grouped Background** (#F2F2F7 / #000000): the field behind every grouped screen, and the navigation bar on those screens.
-- **Plain Background** (#FFFFFF / #000000): A–Z lists, the exercise guide, Add Exercise and onboarding.
-- **Surface** (#FFFFFF / #1C1C1E): sections, cards, the calendar, and the action sheet.
-- **Fill** (#EFEFF4 / #2C2C2E) and **Fill Strong** (#E3E3E8 / #3A3A3C): set inputs, chips, search, step numbers; pressed rows and empty progress marks.
-- **Separator** (#C6C6C8 / #38383A): hairlines between rows.
-- **Outline** (#8E8E93): borders of empty controls such as an unticked set, which must meet 3:1.
-- **Destructive Red** (#D70015 / #FF453A): Discard, Delete, Reset, and remove symbols only.
+- **Ink** (#0E1116 / #F1F3F6): text, the heavy rules under headers and section titles, ticked boxes, the Finish pill.
+- **Muted** (#5B6470 / #9AA3AF): metadata and captions, 6:1 or better on paper.
+- **Paper** (#FFFFFF / #0B0D10): every screen.
+- **Surface** (#F4F6F9 / #151A21): the few raised things: trophy cards, sheets, dialogs, the calendar.
+- **Fill** (#E9EDF2 / #1A2029): empty habit-grid days, search field, ring track.
+- **Rule** (#D9DEE5 / #262C35): light rules between rows.
+- **Outline** (#7D8592 / #6B7583): empty future challenge days and locked trophies (3:1 or better).
+- **Destructive** (#D70015 / #FF453A): Discard, Delete, Reset.
 
 ### Named Rules
-**The Rationed Tint Rule.** Blue marks action or achievement, roughly four times per screen. A navigation row, a section title, an exercise name or a stat is never blue.
+**The Ink Means Done Rule.** Completed sets and earned days are ink-filled; blue is for action and accumulation. Don't tick things in blue.
 
-**The No Raw Hex Rule.** Screens read colors from `useTheme()`; only `constants/theme.ts` holds hex values.
+**The One Blue Rule.** Blue appears a handful of times per screen. Exercise names, section titles, stats and navigation rows are ink.
 
 ## Typography
 
-**Display Font:** none. The system font (SF Pro on iOS) carries everything.
-**Body Font:** System (SF Pro), through `ThemedText`'s `type` prop.
-
-**Character:** native and unbranded. Hierarchy comes from the Apple text-style steps and weight, not custom sizes.
+**Display:** Archivo Narrow 700. **Body:** Archivo 400–800. Both come from `@expo-google-fonts` and load before the splash hides.
 
 ### Hierarchy
-- **Large Title** (700, 34/41): onboarding headlines and the Complete heading. Tab roots get theirs from the native large-title header.
-- **Title 1** (700, 28/34): the workout name and the profile name.
-- **Title 2** (700, 22/28): the live timer on the Resume card.
-- **Title 3** (600, used at 700, 20/25): section titles in sentence case ("Templates", "Consistency", "Personal Records") and stat values.
-- **Headline** (600, 17/22): row titles, exercise names, button labels.
-- **Body** (400, 17/22): row labels, inputs and body copy.
-- **Subheadline** (400, 15/20): row details, metadata, small button labels.
-- **Footnote / Caption** (13/18, 12/16): section footers, template exercise lists, grid legend, the SET / KG / REPS column headers.
+- **Display** (Narrow 700, 48/50, −1 tracking): screen titles ("Today’s log", "History", your name) and the workout name (44 pt). The rest band uses it at 52 pt for the countdown.
+- **Large Title** (Narrow 700, 38/42): the timer on the In progress block.
+- **Title 1** (Narrow 700, 28/32): ledger entries (template names, workout names in History).
+- **Title 2** (800, 22/28): exercise names on the workout screen, set values, totals.
+- **Title 3** (700, 20/25): section titles, in sentence case.
+- **Headline / Body / Subheadline / Footnote / Caption** (17 600, 17 400, 15, 13, 12 600): rows, details, metadata, column headers (SET, LAST, KG, REPS).
 
 ### Named Rules
-**The Text Style Rule.** Every text element picks one of the ten text styles. A raw `fontSize` outside `theme.ts` is a defect; set inputs use 17 pt semibold tabular figures.
-
-**The Tabular Numbers Rule.** Anything that changes in place (timer, weights, reps, counts, volume) uses tabular figures (`numeric`).
+**The Family Per Weight Rule.** Archivo ships one family per weight. `ThemedText` maps `fontWeight` to the family. Inputs use `textStyle()` or `font()`; never rely on `fontWeight` with a custom family.
 
 ## Layout
 
-Single-column phone layout, max 800 px wide and centred on larger screens. Screens have a 16 pt gutter. Sections are spaced 24 pt apart, and a section's title sits 8 pt above its surface. Padded sections use 16 pt insets and a 16 pt internal gap. Rows are at least 44 pt tall with 11 pt vertical padding. Separators start at the text, or 50 pt in when the row has a leading symbol (`RowIconInset`).
+Single column with a 22 pt gutter, max 800 px wide. Tab roots open with `ScreenHeader`: title, a line of context, a 2 pt ink rule. Sections sit 26 pt apart. A section title sits over a 1 pt ink rule, and rows (min 48 pt) are divided by light rules running the full width.
 
 ## Elevation & Depth
 
-Flat. Depth comes from tone, not shadows: white sections on the grouped grey, fills inside sections, and the system's own modal presentation and dimming for sheets. No box shadows anywhere.
+Flat. No shadows. Depth is the difference between paper and surface, and rules do the grouping.
 
 ## Shapes
 
-Continuous corners (`borderCurve: 'continuous'`) at 14 pt on sections, cards and large buttons. Set inputs and the tick box use 8 pt, the search field 10 pt, and small buttons and chips are full capsules. The calendar's workout days are full circles.
+Square ledger. Tick boxes and challenge days are 4 pt squares. Buttons are pills or 52 pt circles. Raised surfaces (trophy cards, sheets) use 14 pt corners. Locked trophies have a dashed border.
 
 ## Components
 
 ### Buttons
-- **Primary:** filled Blue Fill, white headline label, 50 pt tall, 14 pt corners. One per screen: Resume Workout, Done, Finish Workout, Get Started, or Add Exercise in an empty workout.
-- **Tinted:** Soft Blue fill with a blue label. For secondary actions such as Start Challenge, Add Exercise, Start a Workout, Add Your Name, and the template Start capsule (small, 32 pt with a play symbol).
-- **Plain / Destructive:** text only, blue or red. Used for Not Now, Discard Workout, Cancel.
-- **Press:** scale 0.97 and opacity 0.85, at once on press. Disabled is 40% opacity.
+- **Primary:** Blue Fill pill, white headline, 52 pt. One per screen (Resume workout, Done, Finish workout, Get started).
+- **Tinted:** ink-outlined pill (1.5 pt) with ink label, for secondary actions.
+- **Play:** a 52 pt circle on each template row. It's filled blue for the suggested template (the one done longest ago) and ink-outlined for the rest.
+- **Finish:** an ink pill in the workout header.
+- **Plain / Destructive:** text only, blue or red.
 
-### Sections and Rows (`components/list.tsx`)
-- `Section` gives a bold title3 heading with optional trailing text, a white rounded surface with automatic hairline separators, and an optional footnote.
-- `Row` gives a 44 pt minimum height, an optional leading symbol (blue for actions, grey for navigation), a label and detail, and trailing content or a chevron. Pressed rows turn Fill Strong.
+### Challenge Day Boxes
+One 36 pt square per required day, labelled 1…N. Earned days are ink with a check, today's open slot is outlined blue and labelled "Today", and future days have an outline. Used on Start, Complete and onboarding.
 
-### Inputs
-- **Set fields:** Fill background, 36 pt tall, 8 pt corners, centred 17 pt semibold tabular figures. They go transparent once the set is ticked.
-- **Search:** a 36 pt Fill capsule with a magnifying-glass symbol. On iOS the native header search bar is used instead.
+### Habit Grid
+The last 12 weeks: one column per week, one 4 pt-radius square per day. Fill for none, Blue Mid for one workout, Blue for two or more; today is outlined in ink. A "12 weeks ago" label and a Less → More key sit under it.
 
-### Navigation
-- Native tabs (Profile, History, Start Workout, Exercises) with the blue tint. Native stack headers: large titles on tab roots, sheets for the calendar, settings, template editor and Add Exercise. Header buttons are blue SF Symbols or text (Finish, Save, Cancel), each 44 pt.
+### Trophy Cards
+Surface cards with a rule-colored border: blue trophy, title, date. The current challenge shows as a dashed card with an outline trophy and "N days to go".
 
-### Set Row (signature)
-Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Empty fields show the suggested value (the nearest earlier set, else last time) as a grey placeholder. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box Blue Fill with a white checkmark, washes the row in Soft Blue, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+### Workout Status Band
+A 68 pt progress ring (sets done of total, blue on a Fill track) beside the editable workout name (Display 44) and "N kg lifted · Exercise next", closed by a 2 pt ink rule.
 
-### Stepper
-The iOS − | + capsule (Fill background, 32 pt tall, a hairline divider, glyphs greyed out at the limits). It sits beside "N sets" on each exercise in the template editor. Screen readers treat it as an adjustable control.
+### Set Rows
+SET · LAST · KG · REPS · tick box, under a column header with an ink rule. Open values are underlined in blue like blanks on a sheet, and ticked values lose the underline. Tapping LAST copies last time's set. Swipe left to delete. Ticking starts the rest timer.
 
-### Appearance
-Settings has an Appearance group with System, Light and Dark rows; the selected row shows a blue checkmark. System follows the phone. On native, the choice also drives `Appearance.setColorScheme`, so tabs, alerts and the keyboard match.
+### Rest Band
+A full-width Blue Fill band at the bottom: "Rest · then set N", the countdown in Display 52, outlined −15 / +15 circles and a white Skip pill.
 
-### Swipe Actions
-Swipe left reveals one red action, 84 pt wide, with a white symbol over a caption label: Delete on set rows and template rows, Discard on the In Progress card. The action runs on tap, never on a full swipe, and anything that loses work asks for confirmation first.
-
-### Rest Timer
-A bar pinned to the bottom of the workout screen (Surface, hairline top border, in thumb reach): a 4 pt tint progress track, −15 and +15 fill capsules, the countdown in title1 tabular figures, and a tinted Skip. Adjusting it also changes the default length for the next rest (15–600 s, 90 s to start). When it ends it plays a chime and a double warning haptic, then hides.
-
-### Workout Summary Row
-Name, then a relative date with time, duration and volume, then a one-line exercise list. Tapping it fades in the condensed sets ("3 × 8 · 70 kg") over 180 ms; long-pressing deletes the workout.
+### Swipe Actions, Stepper, Appearance
+These are unchanged in behavior. Swipe left reveals one red action (Delete, Discard). The template editor uses a − | + stepper for set counts. Settings has System / Light / Dark.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** build new screens from `Section`, `Row`, `Button`, `Stat`, `Icon` and `ThemedText` types.
+- **Do** build screens from `ScreenHeader`, `Section`, `Row`, `Button`, `Icon` and `ThemedText` types.
+- **Do** describe templates by counts ("4 exercises · 13 sets"), not exercise lists, so rows never overflow.
 - **Do** give every empty state a symbol, a title3 line, one sentence and one action.
-- **Do** state progress plainly: gains get the tint (personal records, extra volume); a lighter session is stated in secondary grey, never flagged red.
-- **Do** keep every tappable target at least 44 × 44 pt, and every text pair at 4.5:1 or better.
+- **Do** state progress plainly: gains get blue, a lighter session is grey, never red.
+- **Do** keep tap targets at 44 pt or larger, and text at 4.5:1 or better.
 
 ### Don't:
-- **Don't** use emoji or text glyphs (✓ ✕ ‹ › •••) as icons; use `Icon` with an SF Symbol and Material name.
-- **Don't** put grey cards on a white background or stack full-width filled buttons; that was the incumbent look this system replaced.
-- **Don't** tint exercise names, stats, section titles or navigation rows blue.
-- **Don't** put white text on `accent`; use `accentFill`.
-- **Don't** add uppercase eyebrow labels above headings; section titles are sentence-case title3.
-- **Don't** add shadows or gradients.
+- **Don't** put content in cards on the main flow; use rules. Surfaces are for trophies, sheets, dialogs and the calendar.
+- **Don't** tick or fill completion in blue; completion is ink.
+- **Don't** set `fontWeight` on inputs or native header titles; use `font()` / `textStyle()`.
+- **Don't** use emoji or text glyphs as icons, uppercase eyebrows above headings, shadows or gradients.

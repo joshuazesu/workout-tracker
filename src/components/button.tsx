@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
@@ -11,8 +11,8 @@ type Props = {
   label: string;
   onPress: () => void;
   /**
-   * `primary` is filled with the tint and should appear once per screen. `tinted` is the quieter
-   * iOS tinted style, `plain` is text only, `destructive` is plain red text.
+   * `primary` is a tint-filled pill and should appear once per screen. `tinted` is the quieter
+   * ink-outlined pill, `plain` is tint text only, `destructive` is plain red text.
    */
   variant?: 'primary' | 'tinted' | 'plain' | 'destructive';
   size?: 'large' | 'small';
@@ -34,9 +34,15 @@ export function Button({
 }: Props) {
   const theme = useTheme();
   const background =
-    variant === 'primary' ? theme.accentFill : variant === 'tinted' ? theme.accentSoft : 'transparent';
+    variant === 'primary' ? theme.accentFill : 'transparent';
   const color =
-    variant === 'primary' ? theme.onAccent : variant === 'destructive' ? theme.destructive : theme.accent;
+    variant === 'primary'
+      ? theme.onAccent
+      : variant === 'destructive'
+        ? theme.destructive
+        : variant === 'tinted'
+          ? theme.text
+          : theme.accent;
 
   return (
     <Pressable
@@ -49,6 +55,8 @@ export function Button({
         size === 'large' ? styles.large : styles.small,
         {
           backgroundColor: background,
+          borderWidth: variant === 'tinted' ? 1.5 : 0,
+          borderColor: theme.text,
           opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
           transform: [{ scale: pressed ? 0.97 : 1 }],
         },
@@ -66,15 +74,14 @@ export function Button({
 
 const styles = StyleSheet.create({
   large: {
-    minHeight: 50,
-    borderRadius: Radius,
+    minHeight: 52,
+    borderRadius: 999,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
     justifyContent: 'center',
-    borderCurve: 'continuous',
   },
   small: {
-    minHeight: 32,
+    minHeight: 36,
     borderRadius: 999,
     paddingHorizontal: Spacing.three - 2,
     alignItems: 'center',

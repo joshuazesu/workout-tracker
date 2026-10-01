@@ -5,7 +5,7 @@ import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
 import { ThemedText } from '@/components/themed-text';
 import { WorkoutSummary } from '@/components/workout-summary';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -148,7 +148,9 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: Spacing.three,
+    paddingHorizontal: Gutter,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.five,
     gap: Spacing.three,
     width: '100%',
     maxWidth: MaxContentWidth,

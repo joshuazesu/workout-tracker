@@ -1,17 +1,29 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ExerciseList } from '@/components/exercise-list';
+import { ScreenHeader } from '@/components/screen-header';
+import { EXERCISE_CATALOG } from '@/constants/exercises';
+import { Gutter } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ExercisesScreen() {
   const theme = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.backgroundPlain }}>
-      <ExerciseList
-        headerSearch
-        onSelect={(name) => router.push({ pathname: '/exercises/[name]', params: { name } })}
-      />
+    <View style={[styles.flex, { backgroundColor: theme.background }]}>
+      <View style={styles.header}>
+        <ScreenHeader title="Exercises" subtitle={`${EXERCISE_CATALOG.length} with step-by-step guides`} />
+      </View>
+      <ExerciseList onSelect={(name) => router.push({ pathname: '/exercises/[name]', params: { name } })} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: Gutter,
+  },
+});

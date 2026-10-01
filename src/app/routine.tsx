@@ -3,10 +3,10 @@ import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Row, RowIconInset, Section } from '@/components/list';
+import { Row, Section } from '@/components/list';
 import { Stepper } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing, TextStyles } from '@/constants/theme';
+import { Gutter, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { MAX_SETS, MIN_SETS, routineActions, useWorkoutStore } from '@/lib/workouts';
@@ -62,7 +62,7 @@ export default function RoutineScreen() {
           autoFocus={isNew}
           returnKeyType="done"
           accessibilityLabel="Template name"
-          style={[styles.name, { color: theme.text, backgroundColor: theme.surface }]}
+          style={[styles.name, { color: theme.text, borderBottomColor: theme.text }]}
         />
 
         <Section
@@ -71,8 +71,7 @@ export default function RoutineScreen() {
             draft.exercises.length === 0
               ? 'Add the exercises you do in this workout. Weights fill in from your last session.'
               : 'Set how many sets each exercise gets. You can still add or remove sets during a workout.'
-          }
-          inset={RowIconInset}>
+          }>
           {draft.exercises.map((name) => (
             <View key={name} style={styles.row}>
               <Pressable
@@ -99,8 +98,8 @@ export default function RoutineScreen() {
           ))}
           <Row
             key="add"
-            label="Add Exercise"
-            icon={{ ios: 'plus.circle.fill', md: 'add_circle' }}
+            label="Add exercise"
+            icon={{ ios: 'plus', md: 'add' }}
             color={theme.accent}
             onPress={() => router.push({ pathname: '/add-exercise', params: { target: 'routine' } })}
           />
@@ -109,7 +108,7 @@ export default function RoutineScreen() {
         {!isNew && (
           <Section>
             <Row
-              label="Delete Template"
+              label="Delete template"
               color={theme.destructive}
               onPress={() =>
                 confirm('Delete template', `Delete “${draft.name}”? Your logged history is kept.`, 'Delete', () =>
@@ -129,8 +128,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Spacing.three,
-    gap: Spacing.four,
+    paddingHorizontal: Gutter,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four + 2,
   },
   headerButton: {
     paddingHorizontal: Spacing.two,
@@ -138,19 +139,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {
-    ...TextStyles.headline,
-    minHeight: 50,
-    borderRadius: Radius,
-    borderCurve: 'continuous',
-    paddingHorizontal: Spacing.three,
+    ...textStyle('display'),
+    fontSize: 40,
+    lineHeight: 46,
+    paddingBottom: Spacing.two,
+    borderBottomWidth: 2,
     minWidth: 0,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    minHeight: 44,
-    paddingVertical: 11,
-    paddingHorizontal: Spacing.three,
+    minHeight: 48,
+    paddingVertical: 10,
   },
 });

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing, TextStyles } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type MenuOption = { label: string; onPress: () => void; destructive?: boolean };
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    ...TextStyles.body,
+    ...textStyle('body'),
     height: 44,
     borderRadius: 10,
     paddingHorizontal: Spacing.three - 4,

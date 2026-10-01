@@ -1,12 +1,13 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Separator } from '@/components/list';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { WorkoutSummary } from '@/components/workout-summary';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutStore, type Workout } from '@/lib/workouts';
 
@@ -26,87 +27,75 @@ export default function HistoryScreen() {
   const { history } = useWorkoutStore();
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
+    <SectionList
+      sections={byMonth(history)}
+      keyExtractor={(w) => w.id}
+      stickySectionHeadersEnabled={false}
+      style={{ backgroundColor: theme.background }}
+      contentContainerStyle={styles.list}
+      ListHeaderComponent={
+        <ScreenHeader
+          title="History"
+          subtitle={history.length > 0 ? `${history.length} ${history.length === 1 ? 'workout' : 'workouts'} logged` : undefined}
+          right={
             <Pressable
               onPress={() => router.push('/history/calendar')}
-              hitSlop={10}
+              hitSlop={6}
               accessibilityRole="button"
               accessibilityLabel="Open calendar"
               style={styles.headerButton}>
-              <Icon name={{ ios: 'calendar', md: 'calendar_month' }} size={22} color={theme.accent} />
+              <Icon name={{ ios: 'calendar', md: 'calendar_month' }} size={24} color={theme.text} />
             </Pressable>
-          ),
-        }}
-      />
-      <SectionList
-        sections={byMonth(history)}
-        keyExtractor={(w) => w.id}
-        contentInsetAdjustmentBehavior="automatic"
-        stickySectionHeadersEnabled={false}
-        style={{ backgroundColor: theme.background }}
-        contentContainerStyle={styles.list}
-        renderSectionHeader={({ section }) => (
-          <ThemedText type="title3" style={styles.sectionTitle} accessibilityRole="header">
+          }
+        />
+      }
+      renderSectionHeader={({ section }) => (
+        <View style={[styles.sectionHeader, { borderBottomColor: theme.text }]}>
+          <ThemedText type="title3" accessibilityRole="header">
             {section.title}
           </ThemedText>
-        )}
-        renderItem={({ item, index, section }) => (
-          // Each month reads as one inset group: round the first and last rows, hairlines between.
-          <View
-            style={[
-              { backgroundColor: theme.surface },
-              index === 0 && styles.first,
-              index === section.data.length - 1 && styles.last,
-            ]}>
-            {index > 0 && <Separator />}
-            <WorkoutSummary workout={item} />
-          </View>
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Icon name={{ ios: 'clock.arrow.circlepath', md: 'history' }} size={44} color={theme.textSecondary} />
-            <ThemedText type="title3" style={styles.emptyTitle}>
-              No workouts yet
-            </ThemedText>
-            <ThemedText type="subheadline" themeColor="textSecondary" style={styles.center}>
-              Finished workouts show up here with every set and rep.
-            </ThemedText>
-            <Button label="Start a Workout" variant="tinted" onPress={() => router.navigate('/')} style={styles.emptyButton} />
-          </View>
-        }
-      />
-    </>
+        </View>
+      )}
+      renderItem={({ item, index }) => (
+        <View>
+          {index > 0 && <Separator />}
+          <WorkoutSummary workout={item} />
+        </View>
+      )}
+      ListEmptyComponent={
+        <View style={styles.empty}>
+          <Icon name={{ ios: 'clock.arrow.circlepath', md: 'history' }} size={44} color={theme.textSecondary} />
+          <ThemedText type="title3" style={styles.emptyTitle}>
+            No workouts yet
+          </ThemedText>
+          <ThemedText type="subheadline" themeColor="textSecondary" style={styles.center}>
+            Finished workouts show up here with every set and rep.
+          </ThemedText>
+          <Button label="Start a workout" variant="tinted" onPress={() => router.navigate('/')} style={styles.emptyButton} />
+        </View>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
   list: {
-    padding: Spacing.three,
+    paddingHorizontal: Gutter,
+    paddingBottom: Spacing.five,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
   headerButton: {
-    paddingHorizontal: Spacing.one,
+    width: 44,
+    height: 44,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
-  sectionTitle: {
-    fontWeight: 700,
-    paddingHorizontal: Spacing.one,
-    paddingTop: Spacing.three,
+  sectionHeader: {
+    paddingTop: Spacing.four + 2,
     paddingBottom: Spacing.two,
-  },
-  first: {
-    borderTopLeftRadius: Radius,
-    borderTopRightRadius: Radius,
-    overflow: 'hidden',
-  },
-  last: {
-    borderBottomLeftRadius: Radius,
-    borderBottomRightRadius: Radius,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
   },
   empty: {
     alignItems: 'center',
@@ -115,7 +104,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   emptyTitle: {
-    fontWeight: 700,
     marginTop: Spacing.one,
   },
   center: {

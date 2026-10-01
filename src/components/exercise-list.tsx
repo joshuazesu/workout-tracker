@@ -6,7 +6,7 @@ import { Platform, Pressable, SectionList, StyleSheet, TextInput, View } from 'r
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { EXERCISE_CATALOG, type ExerciseInfo } from '@/constants/exercises';
-import { Spacing, TextStyles } from '@/constants/theme';
+import { Gutter, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Row = { name: string; info?: ExerciseInfo; custom?: boolean };
@@ -143,21 +143,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginHorizontal: Spacing.three,
+    marginHorizontal: Gutter,
     marginVertical: Spacing.two,
     height: 36,
     borderRadius: 10,
     paddingHorizontal: Spacing.two,
   },
   searchInput: {
-    ...TextStyles.body,
+    ...textStyle('body'),
     flex: 1,
     minWidth: 0,
     height: 36,
   },
   sectionHeader: {
-    fontWeight: 600,
-    paddingHorizontal: Spacing.three,
+    fontWeight: 700,
+    paddingHorizontal: Gutter,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.one,
   },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    paddingLeft: Spacing.three,
+    paddingLeft: Gutter,
   },
   // The separator runs under the text only, like iOS lists with thumbnails.
   rowText: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     gap: 1,
     minHeight: 64,
     paddingVertical: Spacing.two,
-    paddingRight: Spacing.three,
+    paddingRight: Gutter,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   thumb: {

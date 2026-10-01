@@ -3,14 +3,14 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
 /**
- * An inset grouped section, like a block in iOS Settings or Health: an optional bold title, a white
- * rounded surface whose rows get hairline separators, and an optional footnote below.
+ * A ledger section: a bold title over an ink rule, then rows divided by light rules. No card behind
+ * it; the page is the paper.
  */
 export function Section({
   title,
@@ -18,7 +18,6 @@ export function Section({
   footer,
   children,
   padded = false,
-  inset,
   style,
 }: {
   title?: string;
@@ -26,19 +25,17 @@ export function Section({
   trailing?: ReactNode;
   footer?: string;
   children: ReactNode;
-  /** Pad the surface for free-form content instead of rows. */
+  /** Free-form content instead of rows. */
   padded?: boolean;
-  /** Separator inset; rows with a leading symbol line up with the text at `RowIconInset`. */
-  inset?: number;
   style?: ViewStyle;
 }) {
   const theme = useTheme();
   const rows = Children.toArray(children).filter(isValidElement);
 
   return (
-    <View style={[styles.section, style]}>
+    <View style={style}>
       {(title || trailing) && (
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.text }]}>
           {title && (
             <ThemedText type="title3" style={styles.title} accessibilityRole="header">
               {title}
@@ -53,16 +50,16 @@ export function Section({
           )}
         </View>
       )}
-      <View style={[styles.surface, padded && styles.padded, { backgroundColor: theme.surface }]}>
-        {padded
-          ? children
-          : rows.map((row, i) => (
-              <Fragment key={row.key ?? i}>
-                {i > 0 && <Separator inset={inset} />}
-                {row}
-              </Fragment>
-            ))}
-      </View>
+      {padded ? (
+        <View style={styles.padded}>{children}</View>
+      ) : (
+        rows.map((row, i) => (
+          <Fragment key={row.key ?? i}>
+            {i > 0 && <Separator />}
+            {row}
+          </Fragment>
+        ))
+      )}
       {footer && (
         <ThemedText type="footnote" themeColor="textSecondary" style={styles.footer}>
           {footer}
@@ -72,16 +69,13 @@ export function Section({
   );
 }
 
-/** Separator inset that lines up with the label of a `Row` that has an icon. */
-export const RowIconInset = Spacing.three + 22 + Spacing.three - 4;
-
-/** Hairline between rows, inset from the leading edge like iOS lists. */
-export function Separator({ inset = Spacing.three }: { inset?: number }) {
+/** Light rule between ledger rows. */
+export function Separator() {
   const theme = useTheme();
-  return <View style={[styles.separator, { marginLeft: inset, backgroundColor: theme.separator }]} />;
+  return <View style={[styles.separator, { backgroundColor: theme.separator }]} />;
 }
 
-/** A tappable list row with an optional leading symbol and trailing chevron. */
+/** A tappable ledger row with an optional leading symbol and trailing chevron. */
 export function Row({
   label,
   detail,
@@ -111,8 +105,8 @@ export function Row({
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fillStrong }]}>
-      {icon && <Icon name={icon} size={22} color={iconColor ?? color ?? theme.accent} />}
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fill }]}>
+      {icon && <Icon name={icon} size={22} color={iconColor ?? color ?? theme.text} />}
       <View style={styles.rowText}>
         <ThemedText style={color ? { color } : undefined}>{label}</ThemedText>
         {detail && (
@@ -128,42 +122,33 @@ export function Row({
 }
 
 const styles = StyleSheet.create({
-  section: {
-    gap: Spacing.two,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: Spacing.two,
-    paddingHorizontal: Spacing.one,
+    paddingBottom: Spacing.two,
+    borderBottomWidth: 1,
   },
   title: {
     flex: 1,
-    fontWeight: 700,
-  },
-  surface: {
-    borderRadius: Radius,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
   },
   padded: {
-    padding: Spacing.three,
-    gap: Spacing.three,
+    paddingTop: Spacing.three - 4,
+    gap: Spacing.three - 4,
   },
   footer: {
-    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
+    height: StyleSheet.hairlineWidth * 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    minHeight: 44,
-    paddingVertical: 11,
-    paddingHorizontal: Spacing.three,
+    minHeight: 48,
+    paddingVertical: 12,
   },
   rowText: {
     flex: 1,

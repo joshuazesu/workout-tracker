@@ -1,85 +1,80 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-01T11:08:38.033626+00:00",
+  "generatedAt": "2026-10-01T12:26:34.413482+00:00",
   "title": "Design System: Workout Tracker",
   "extensions": {
     "colorMeta": {
-      "secondary-label": {
-        "role": "neutral",
-        "displayName": "Secondary Label",
-        "canonical": "#6C6C70"
+      "blue": {
+        "role": "primary",
+        "displayName": "Logbook Blue",
+        "canonical": "#0B5FD6",
+        "tonalRamp": [
+          "#062A61",
+          "#08408F",
+          "#0B5FD6",
+          "#3C80E0",
+          "#7FA9EA",
+          "#AFCAF2",
+          "#D7E5F9",
+          "#EEF4FC"
+        ]
       },
-      "grouped-background": {
+      "ink": {
         "role": "neutral",
-        "displayName": "Grouped Background",
-        "canonical": "#F2F2F7"
+        "displayName": "Ink",
+        "canonical": "#0E1116"
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#FFFFFF"
       },
       "surface": {
         "role": "neutral",
         "displayName": "Surface",
-        "canonical": "#FFFFFF"
+        "canonical": "#F4F6F9"
       },
-      "destructive-red": {
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#D9DEE5"
+      },
+      "destructive": {
         "role": "error",
-        "displayName": "Destructive Red",
+        "displayName": "Destructive",
         "canonical": "#D70015"
-      },
-      "tint-blue": {
-        "role": "primary",
-        "displayName": "Logbook Blue",
-        "canonical": "#0064D2",
-        "tonalRamp": [
-          "#001A3D",
-          "#002A61",
-          "#003F8F",
-          "#0064D2",
-          "#2F86E6",
-          "#6AAAF0",
-          "#A9CDF7",
-          "#E3F0FD"
-        ]
       }
     },
     "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Screen titles and big numerals, Archivo Narrow 700."
+      },
+      "title1": {
+        "displayName": "Ledger entry",
+        "purpose": "Template and workout names."
+      },
       "title3": {
-        "displayName": "Section Title",
-        "purpose": "Sentence-case section headings at weight 700."
-      },
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "Row titles, exercise names, button labels."
-      },
-      "body": {
-        "displayName": "Body",
-        "purpose": "Row labels, inputs, copy."
+        "displayName": "Section title",
+        "purpose": "Sentence-case section headings over an ink rule."
       }
     },
     "shadows": [],
     "motion": [
       {
         "name": "press",
-        "value": "scale 0.97, opacity 0.85, instant",
-        "purpose": "Every pressable button."
+        "value": "scale 0.97 (play 0.94), instant",
+        "purpose": "Pressables."
       },
       {
         "name": "set-tick",
-        "value": "timing 90ms to 1.2, spring damping 8 to 1",
+        "value": "timing 90ms to 1.2, spring damping 8",
         "purpose": "Ticking a set; skipped under Reduce Motion."
       },
       {
-        "name": "expand",
-        "value": "fade in 180ms",
-        "purpose": "Expanding a history row."
-      },
-      {
-        "name": "finish-badge",
-        "value": "spring damping 11 stiffness 180 from 0.6",
-        "purpose": "Complete screen checkmark or trophy."
-      },
-      {
-        "name": "rest-bar",
+        "name": "rest-band",
         "value": "fade up 200ms in, fade down 150ms out",
-        "purpose": "Rest timer bar; skipped under Reduce Motion."
+        "purpose": "Rest band; skipped under Reduce Motion."
       }
     ],
     "breakpoints": [
@@ -94,95 +89,79 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one filled action per screen.",
-      "html": "<button class=\"ds-btn-primary\">Resume Workout</button>",
-      "css": ".ds-btn-primary{background:#0064D2;color:#fff;font:600 17px/22px system-ui,-apple-system,sans-serif;height:50px;padding:0 24px;border:none;border-radius:14px;width:100%;transition:transform 100ms ease-out,opacity 100ms}.ds-btn-primary:active{transform:scale(.97);opacity:.85}.ds-btn-primary:focus-visible{outline:2px solid #0064D2;outline-offset:2px}"
+      "description": "The one blue pill per screen.",
+      "html": "<button class=\"ds-btn-primary\">Resume workout</button>",
+      "css": ".ds-btn-primary{background:#0B5FD6;color:#fff;font:600 17px/22px Archivo,sans-serif;height:52px;padding:0 24px;border:0;border-radius:999px;width:100%}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #0B5FD6;outline-offset:2px}"
     },
     {
       "name": "Tinted Button",
       "kind": "button",
       "refersTo": "button-tinted",
-      "description": "Secondary actions.",
-      "html": "<button class=\"ds-btn-tinted\">Start Challenge</button>",
-      "css": ".ds-btn-tinted{background:rgba(0,100,210,.1);color:#0064D2;font:600 17px/22px system-ui,-apple-system,sans-serif;height:50px;padding:0 24px;border:none;border-radius:14px;width:100%;transition:transform 100ms ease-out}.ds-btn-tinted:active{transform:scale(.97)}.ds-btn-tinted:focus-visible{outline:2px solid #0064D2;outline-offset:2px}"
+      "description": "Ink-outlined secondary pill.",
+      "html": "<button class=\"ds-btn-tinted\">Start challenge</button>",
+      "css": ".ds-btn-tinted{background:transparent;color:#0E1116;font:600 17px/22px Archivo,sans-serif;height:52px;padding:0 24px;border:1.5px solid #0E1116;border-radius:999px;width:100%}.ds-btn-tinted:active{transform:scale(.97)}"
     },
     {
-      "name": "Start Capsule",
-      "kind": "button",
-      "refersTo": "button-tinted-small",
-      "description": "Starts a template from its row.",
-      "html": "<button class=\"ds-btn-capsule\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path d=\"M8 5v14l11-7z\" fill=\"currentColor\"/></svg>Start</button>",
-      "css": ".ds-btn-capsule{display:inline-flex;align-items:center;gap:6px;background:rgba(0,100,210,.1);color:#0064D2;font:600 15px/20px system-ui,-apple-system,sans-serif;height:32px;padding:0 14px;border:none;border-radius:999px}.ds-btn-capsule:active{transform:scale(.97)}.ds-btn-capsule:focus-visible{outline:2px solid #0064D2;outline-offset:2px}"
-    },
-    {
-      "name": "Grouped Section",
-      "kind": "card",
-      "refersTo": "section",
-      "description": "Title plus white inset group with hairline rows.",
-      "html": "<div class=\"ds-section\"><h3 class=\"ds-section-title\">Templates</h3><div class=\"ds-section-body\"><div class=\"ds-row\">Push</div><div class=\"ds-row\">Pull</div></div></div>",
-      "css": ".ds-section{background:#F2F2F7;padding:16px;font-family:system-ui,-apple-system,sans-serif}.ds-section-title{font:700 20px/25px inherit;margin:0 4px 8px;color:#000}.ds-section-body{background:#fff;border-radius:14px;overflow:hidden}.ds-row{min-height:44px;padding:11px 16px;font:400 17px/22px inherit;color:#000;box-shadow:inset 0 -.5px 0 #C6C6C8;margin-left:0}.ds-row:last-child{box-shadow:none}.ds-row:active{background:#E3E3E8}"
-    },
-    {
-      "name": "Set Input",
-      "kind": "input",
-      "refersTo": "set-input",
-      "description": "Weight or reps field in a set row.",
-      "html": "<input class=\"ds-set-input\" value=\"70\" aria-label=\"Weight\">",
-      "css": ".ds-set-input{background:#EFEFF4;color:#000;border:none;border-radius:8px;height:36px;width:96px;text-align:center;font:600 17px system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums}.ds-set-input:focus-visible{outline:2px solid #0064D2}"
+      "name": "Template Row",
+      "kind": "custom",
+      "refersTo": "play-button",
+      "description": "Ledger entry with counts and a round play button.",
+      "html": "<div class=\"ds-tpl\"><div><div class=\"ds-tpl-name\">Push</div><div class=\"ds-tpl-meta\">4 exercises · 13 sets</div></div><button class=\"ds-play\" aria-label=\"Start Push\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"><path d=\"M7 5v14l11-7z\" fill=\"#fff\"/></svg></button></div>",
+      "css": ".ds-tpl{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #D9DEE5;font-family:Archivo,sans-serif}.ds-tpl-name{font:700 28px/32px 'Archivo Narrow',sans-serif;color:#0E1116}.ds-tpl-meta{font-size:15px;color:#5B6470}.ds-play{width:52px;height:52px;border-radius:26px;border:0;background:#0B5FD6;display:flex;align-items:center;justify-content:center}"
     },
     {
       "name": "Set Tick",
       "kind": "custom",
-      "refersTo": "set-input",
-      "description": "Signature control: empty outlined square, filled blue with a check when done.",
-      "html": "<button class=\"ds-tick\" aria-pressed=\"false\"></button><button class=\"ds-tick ds-tick-on\" aria-pressed=\"true\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\"><path d=\"M5 12.5l4.5 4.5L19 7.5\" stroke=\"#fff\" stroke-width=\"2.6\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button>",
-      "css": ".ds-tick{width:36px;height:36px;border-radius:8px;border:1.5px solid #8E8E93;background:transparent;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;transition:transform 150ms ease-out}.ds-tick:active{transform:scale(.97)}.ds-tick-on{background:#0064D2;border-color:#0064D2}"
+      "refersTo": "set-box",
+      "description": "Ink box: empty outline, filled with a check when done.",
+      "html": "<button class=\"ds-tick\"></button><button class=\"ds-tick ds-on\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\"><path d=\"M5 12.5l4.5 4.5L19 7.5\" stroke=\"#fff\" stroke-width=\"2.6\" fill=\"none\"/></svg></button>",
+      "css": ".ds-tick{width:36px;height:36px;border-radius:4px;border:1.5px solid #0E1116;background:transparent;margin-right:8px;display:inline-flex;align-items:center;justify-content:center}.ds-on{background:#0E1116}"
+    },
+    {
+      "name": "Rest Band",
+      "kind": "custom",
+      "refersTo": "rest-band",
+      "description": "Full-width blue countdown band.",
+      "html": "<div class=\"ds-rest\"><div><div class=\"ds-rest-l\">Rest · then set 3</div><div class=\"ds-rest-t\">1:24</div></div><button class=\"ds-skip\">Skip</button></div>",
+      "css": ".ds-rest{background:#0B5FD6;color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;font-family:Archivo,sans-serif}.ds-rest-l{font-size:15px;opacity:.9}.ds-rest-t{font:700 52px/54px 'Archivo Narrow',sans-serif}.ds-skip{height:52px;padding:0 18px;border-radius:26px;border:0;background:#fff;color:#0B5FD6;font-weight:700}"
     }
   ],
   "narrative": {
-    "northStar": "The Quiet Logbook",
-    "overview": "The app should feel like it shipped on the iPhone, sitting between Apple Fitness and Health. Screens are inset grouped lists on the system grey. Content sits in white rounded sections with hairline separators, and SF Symbols are the only icons. The system type ramp carries the hierarchy, so there is no display face and no decoration. Calm is the default. Blue is the single tint, and it marks only what the user should act on or has earned: a Start or Resume button, a ticked set, challenge progress, a personal record.",
+    "northStar": "The Logbook",
+    "overview": "A training ledger on a phone. Each screen is plain paper with ink rules: a big condensed title closed by a heavy rule, then ruled lists. Blue marks what you act on and what you've built up; ink marks what's done.",
     "keyCharacteristics": [
-      "Grouped grey background, white 14 pt continuous-corner sections, hairline separators inset to the text.",
-      "The iOS text styles from Large Title down to Caption; no other sizes.",
-      "One tint, rationed to about four uses per screen.",
-      "SF Symbols on iOS, matching Material Symbols on Android and web; never emoji or text glyphs as icons.",
-      "Light and dark appearances are both first-class."
+      "Paper and ink, with no cards in the main flow. Rules carry the structure.",
+      "Archivo Narrow for titles and big numbers, Archivo for everything else.",
+      "One blue, used sparingly. Ink, not blue, for completion.",
+      "Pills and circles for buttons, square 4 px boxes for things you tick.",
+      "Light and dark appearances are both first-class (Settings › Appearance)."
     ],
     "rules": [
       {
-        "name": "The Rationed Tint Rule",
-        "body": "Blue marks action or achievement, roughly four times per screen. A navigation row, a section title, an exercise name or a stat is never blue.",
+        "name": "The Ink Means Done Rule",
+        "body": "Completed sets and earned days are ink-filled; blue is for action and accumulation.",
         "section": "colors"
       },
       {
-        "name": "The No Raw Hex Rule",
-        "body": "Screens read colors from useTheme(); only constants/theme.ts holds hex values.",
+        "name": "The One Blue Rule",
+        "body": "Blue appears a handful of times per screen. Exercise names, section titles, stats and navigation rows are ink.",
         "section": "colors"
       },
       {
-        "name": "The Text Style Rule",
-        "body": "Every text element picks one of the ten text styles. A raw fontSize outside theme.ts is a defect; set inputs use 17 pt semibold tabular figures.",
-        "section": "typography"
-      },
-      {
-        "name": "The Tabular Numbers Rule",
-        "body": "Anything that changes in place (timer, weights, reps, counts, volume) uses tabular figures (numeric).",
+        "name": "The Family Per Weight Rule",
+        "body": "ThemedText maps fontWeight to an Archivo family; inputs use textStyle() or font().",
         "section": "typography"
       }
     ],
     "dos": [
-      "Do build new screens from Section, Row, Button, Stat, Icon and ThemedText types.",
+      "Do describe templates by counts (\"4 exercises · 13 sets\"), not exercise lists.",
       "Do give every empty state a symbol, a title3 line, one sentence and one action.",
-      "Do state progress plainly: gains get the tint (personal records, extra volume); a lighter session is stated in secondary grey, never flagged red.",
-      "Do keep every tappable target at least 44 × 44 pt, and every text pair at 4.5:1 or better."
+      "Do state progress plainly: gains get blue, a lighter session is grey, never red."
     ],
     "donts": [
-      "Don't use emoji or text glyphs (✓ ✕ ‹ › •••) as icons; use Icon with an SF Symbol and Material name.",
-      "Don't put grey cards on a white background or stack full-width filled buttons; that was the incumbent look this system replaced.",
-      "Don't tint exercise names, stats, section titles or navigation rows blue.",
-      "Don't add uppercase eyebrow labels above headings; section titles are sentence-case title3.",
-      "Don't add shadows or gradients."
+      "Don't put content in cards on the main flow; use rules.",
+      "Don't tick or fill completion in blue; completion is ink.",
+      "Don't use emoji or text glyphs as icons, uppercase eyebrows, shadows or gradients."
     ]
   }
 }

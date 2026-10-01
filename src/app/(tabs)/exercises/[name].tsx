@@ -7,7 +7,7 @@ import { Icon } from '@/components/icon';
 import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
 import { findExercise } from '@/constants/exercises';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutStore } from '@/lib/workouts';
@@ -107,7 +107,9 @@ export default function ExerciseDetailScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: Spacing.three,
+    paddingHorizontal: Gutter,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
     gap: Spacing.four,
     width: '100%',
     maxWidth: MaxContentWidth,

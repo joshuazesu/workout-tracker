@@ -4,7 +4,7 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { ChallengeDots } from '@/components/challenge-dots';
+import { DayBoxes } from '@/components/cards';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -45,7 +45,7 @@ export default function OnboardingScreen() {
       icon: { ios: 'calendar.badge.checkmark', md: 'event_available' } as const,
       title: `Take the ${kickstart.title}`,
       body: `${kickstart.blurb} Finish it to earn your first trophy.`,
-      extra: <ChallengeDots done={0} total={kickstart.days} size={22} />,
+      extra: <DayBoxes done={0} total={kickstart.days} doneToday={false} />,
       actions: (
         <>
           <Button label="I’m In" onPress={() => next(true)} />
