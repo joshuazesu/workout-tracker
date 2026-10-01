@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { ChallengeCard } from '@/components/cards';
 import { Icon } from '@/components/icon';
 import { Row, RowIconInset, Section } from '@/components/list';
+import { SwipeAction } from '@/components/swipe-action';
 import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -47,6 +48,11 @@ export default function StartScreen() {
     router.push('/routine');
   };
 
+  const deleteTemplate = (r: Routine) =>
+    confirm('Delete template', `Delete “${r.name}”? Your logged history is kept.`, 'Delete', () =>
+      routineActions.delete(r.id)
+    );
+
   const menuOptions = (r: Routine): MenuOption[] => [
     { label: 'Rename', onPress: () => setRenaming(r) },
     { label: 'Edit Exercises', onPress: () => edit(r.id) },
@@ -54,10 +60,7 @@ export default function StartScreen() {
     {
       label: 'Delete',
       destructive: true,
-      onPress: () =>
-        confirm('Delete template', `Delete “${r.name}”? Your logged history is kept.`, 'Delete', () =>
-          routineActions.delete(r.id)
-        ),
+      onPress: () => deleteTemplate(r),
     },
   ];
 
@@ -73,13 +76,15 @@ export default function StartScreen() {
 
         <Section title="Templates" trailing={`${routines.length} of ${MAX_ROUTINES}`}>
           {routines.map((r) => (
-            <TemplateRow
-              key={r.id}
-              routine={r}
-              canStart={!active}
-              onStart={() => start(r.id)}
-              onMenu={() => setMenuFor(r)}
-            />
+            <SwipeAction key={r.id} label="Delete" onAction={() => deleteTemplate(r)}>
+              <TemplateRow
+                routine={r}
+                canStart={!active}
+                onStart={() => start(r.id)}
+                onMenu={() => setMenuFor(r)}
+                onDelete={() => deleteTemplate(r)}
+              />
+            </SwipeAction>
           ))}
           <Row
             key="new"
@@ -123,26 +128,38 @@ export default function StartScreen() {
   );
 }
 
-/** The workout in progress. While one runs, this is the only filled button on the screen. */
+/**
+ * The workout in progress. While one runs, this is the only filled button on the screen.
+ * Swipe it left to discard the workout.
+ */
 function ResumeCard({ workout }: { workout: Workout }) {
   const now = useNow(1000);
   const sets = workout.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
+  const discard = () =>
+    confirm('Discard workout', 'All sets in this workout will be lost.', 'Discard', workoutActions.discard);
   return (
-    <Section title="In Progress" padded>
-      <View style={styles.resumeRow}>
-        <View style={styles.flex}>
-          <ThemedText type="headline" numberOfLines={1}>
-            {workout.name || 'Workout'}
-          </ThemedText>
-          <ThemedText type="subheadline" themeColor="textSecondary" numeric>
-            {sets} {sets === 1 ? 'set' : 'sets'} done
-          </ThemedText>
+    <Section title="In Progress">
+      <SwipeAction label="Discard" icon={{ ios: 'xmark.bin', md: 'delete_forever' }} onAction={discard}>
+        <View
+          style={styles.resume}
+          accessibilityActions={[{ name: 'discard', label: 'Discard workout' }]}
+          onAccessibilityAction={(e) => e.nativeEvent.actionName === 'discard' && discard()}>
+          <View style={styles.resumeRow}>
+            <View style={styles.flex}>
+              <ThemedText type="headline" numberOfLines={1}>
+                {workout.name || 'Workout'}
+              </ThemedText>
+              <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+                {sets} {sets === 1 ? 'set' : 'sets'} done
+              </ThemedText>
+            </View>
+            <ThemedText type="title2" numeric accessibilityLabel={`Elapsed ${formatDuration(now - workout.startedAt)}`}>
+              {formatDuration(now - workout.startedAt)}
+            </ThemedText>
+          </View>
+          <Button label="Resume Workout" icon={{ ios: 'play.fill', md: 'play_arrow' }} onPress={() => router.push('/workout')} />
         </View>
-        <ThemedText type="title2" numeric accessibilityLabel={`Elapsed ${formatDuration(now - workout.startedAt)}`}>
-          {formatDuration(now - workout.startedAt)}
-        </ThemedText>
-      </View>
-      <Button label="Resume Workout" icon={{ ios: 'play.fill', md: 'play_arrow' }} onPress={() => router.push('/workout')} />
+      </SwipeAction>
     </Section>
   );
 }
@@ -152,15 +169,20 @@ function TemplateRow({
   canStart,
   onStart,
   onMenu,
+  onDelete,
 }: {
   routine: Routine;
   canStart: boolean;
   onStart: () => void;
   onMenu: () => void;
+  onDelete: () => void;
 }) {
   const theme = useTheme();
   return (
-    <View style={styles.template}>
+    <View
+      style={styles.template}
+      accessibilityActions={[{ name: 'delete', label: 'Delete template' }]}
+      onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}>
       <View style={styles.flex}>
         <ThemedText type="headline" numberOfLines={1}>
           {routine.name}
@@ -205,6 +227,10 @@ const styles = StyleSheet.create({
   hint: {
     marginTop: -Spacing.three,
     paddingHorizontal: Spacing.three,
+  },
+  resume: {
+    padding: Spacing.three,
+    gap: Spacing.three,
   },
   resumeRow: {
     flexDirection: 'row',

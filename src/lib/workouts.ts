@@ -276,11 +276,28 @@ export const workoutActions = {
   removeSet(exerciseId: string, setId: string) {
     updateExercise(exerciseId, (e) => ({ ...e, sets: e.sets.filter((s) => s.id !== setId) }));
   },
+  /**
+   * Edits a set. A weight or reps edit also flows down to the later sets that still hold the old
+   * value and aren't ticked, so changing set 1 from 70 to 72.5 kg suggests 72.5 for the rest.
+   */
   updateSet(exerciseId: string, setId: string, patch: Partial<Omit<WorkoutSet, 'id'>>) {
-    updateExercise(exerciseId, (e) => ({
-      ...e,
-      sets: e.sets.map((s) => (s.id === setId ? { ...s, ...patch } : s)),
-    }));
+    updateExercise(exerciseId, (e) => {
+      const index = e.sets.findIndex((s) => s.id === setId);
+      if (index === -1) return e;
+      const old = e.sets[index];
+      return {
+        ...e,
+        sets: e.sets.map((s, i) => {
+          if (i === index) return { ...s, ...patch };
+          if (i < index || s.done || patch.done !== undefined) return s;
+          const next = { ...s };
+          // Clearing a field mid-edit shouldn't wipe the sets below it.
+          if (patch.weight && s.weight === old.weight) next.weight = patch.weight;
+          if (patch.reps && s.reps === old.reps) next.reps = patch.reps;
+          return next;
+        }),
+      };
+    });
   },
   rename(name: string) {
     updateActive((w) => ({ ...w, name }));

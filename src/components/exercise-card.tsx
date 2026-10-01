@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -11,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
+import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -22,6 +22,18 @@ import { workoutActions, type WorkoutExercise, type WorkoutSet } from '@/lib/wor
 function formatPrevious(set: WorkoutSet | undefined) {
   if (!set) return '–';
   return Number(set.weight) > 0 ? `${set.weight} × ${set.reps}` : `${set.reps} reps`;
+}
+
+/**
+ * What to suggest for each empty field: the nearest earlier set in this workout with that field
+ * filled, else the same set from last time.
+ */
+function suggestFor(sets: WorkoutSet[], index: number, previous?: WorkoutSet) {
+  const earlier = sets.slice(0, index).reverse();
+  return {
+    weight: earlier.find((s) => s.weight)?.weight ?? previous?.weight ?? '',
+    reps: earlier.find((s) => s.reps)?.reps ?? previous?.reps ?? '',
+  };
 }
 
 export const ExerciseCard = memo(function ExerciseCard({
@@ -71,7 +83,14 @@ export const ExerciseCard = memo(function ExerciseCard({
       </View>
 
       {exercise.sets.map((set, index) => (
-        <SetRow key={set.id} exerciseId={exercise.id} set={set} index={index} previous={previous?.[index]} />
+        <SetRow
+          key={set.id}
+          exerciseId={exercise.id}
+          set={set}
+          index={index}
+          previous={previous?.[index]}
+          suggestion={suggestFor(exercise.sets, index, previous?.[index])}
+        />
       ))}
 
       <Pressable
@@ -95,11 +114,14 @@ function SetRow({
   set,
   index,
   previous,
+  suggestion,
 }: {
   exerciseId: string;
   set: WorkoutSet;
   index: number;
   previous?: WorkoutSet;
+  /** Shown as the placeholder of an empty field, and used if the set is ticked while empty. */
+  suggestion?: { weight: string; reps: string };
 }) {
   const theme = useTheme();
   const inputStyle = [
@@ -115,7 +137,10 @@ function SetRow({
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
 
   const toggleDone = () => {
-    if (!set.done && !(Number(set.reps) > 0)) {
+    // Ticking an empty field accepts the suggestion shown in it.
+    const reps = set.reps || suggestion?.reps || '';
+    const weight = set.weight || suggestion?.weight || '';
+    if (!set.done && !(Number(reps) > 0)) {
       feedback.error();
       if (!reduceMotion) {
         // A quick shake says "add reps first" without a dialog.
@@ -129,7 +154,7 @@ function SetRow({
       feedback.setDone();
       if (!reduceMotion) pop.set(withSequence(withTiming(1.2, { duration: 90 }), withSpring(1, { damping: 8 })));
     }
-    workoutActions.updateSet(exerciseId, set.id, { done: !set.done });
+    workoutActions.updateSet(exerciseId, set.id, set.done ? { done: false } : { done: true, weight, reps });
     if (!set.done) workoutActions.startRest();
   };
 
@@ -139,21 +164,7 @@ function SetRow({
   };
 
   return (
-    <ReanimatedSwipeable
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      // Opaque under the row so the delete action can't show through a ticked set's tint.
-      childrenContainerStyle={[styles.swipeSurface, { backgroundColor: theme.surface }]}
-      renderRightActions={() => (
-        <Pressable
-          onPress={remove}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete set ${index + 1}`}
-          style={[styles.deleteAction, { backgroundColor: theme.destructive }]}>
-          <Icon name={{ ios: 'trash', md: 'delete' }} size={20} color="#FFFFFF" />
-        </Pressable>
-      )}>
+    <SwipeAction label="Delete" onAction={remove} radius={10}>
       <View
         style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accentSoft }]}
         accessibilityActions={[{ name: 'delete', label: 'Delete set' }]}
@@ -183,7 +194,7 @@ function SetRow({
             workoutActions.updateSet(exerciseId, set.id, { weight: weight.replace(',', '.') })
           }
           keyboardType="decimal-pad"
-          placeholder="0"
+          placeholder={suggestion?.weight || '0'}
           placeholderTextColor={theme.textSecondary}
           selectTextOnFocus
           accessibilityLabel={`Set ${index + 1} weight in kilograms`}
@@ -195,7 +206,7 @@ function SetRow({
             workoutActions.updateSet(exerciseId, set.id, { reps: reps.replace(/\D/g, '') })
           }
           keyboardType="number-pad"
-          placeholder="0"
+          placeholder={suggestion?.reps || '0'}
           placeholderTextColor={theme.textSecondary}
           selectTextOnFocus
           accessibilityLabel={`Set ${index + 1} reps`}
@@ -220,7 +231,7 @@ function SetRow({
           </Animated.View>
         </Pressable>
       </View>
-    </ReanimatedSwipeable>
+    </SwipeAction>
   );
 }
 
@@ -269,22 +280,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 600,
   },
-  swipeSurface: {
-    borderRadius: 10,
-  },
   colPrevious: {
     width: 64,
     justifyContent: 'center',
   },
   previousText: {
     textAlign: 'center',
-  },
-  deleteAction: {
-    width: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    marginLeft: Spacing.two,
   },
   colInput: {
     flex: 1,

@@ -207,7 +207,10 @@ Continuous corners (`borderCurve: 'continuous'`) at 14 pt on sections, cards and
 - Native tabs (Profile, History, Start Workout, Exercises) with the green tint. Native stack headers: large titles on tab roots, sheets for the calendar, settings, template editor and Add Exercise. Header buttons are green SF Symbols or text (Finish, Save, Cancel), each 44 pt.
 
 ### Set Row (signature)
-Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box green with a white checkmark, washes the row in Soft Green, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Empty fields show the suggested value (the nearest earlier set, else last time) as a grey placeholder. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box green with a white checkmark, washes the row in Soft Green, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+
+### Swipe Actions
+Swipe left reveals one red action, 84 pt wide, with a white symbol over a caption label: Delete on set rows and template rows, Discard on the In Progress card. The action runs on tap, never on a full swipe, and anything that loses work asks for confirmation first.
 
 ### Rest Timer
 A bar pinned to the bottom of the workout screen (Surface, hairline top border, in thumb reach): a 4 pt tint progress track, −15 and +15 fill capsules, the countdown in title1 tabular figures, and a tinted Skip. Adjusting it also changes the default length for the next rest (15–600 s, 90 s to start). When it ends it plays a chime and a double warning haptic, then hides.
