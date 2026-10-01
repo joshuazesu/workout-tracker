@@ -24,6 +24,8 @@ export type Workout = {
   startedAt: number;
   endedAt?: number;
   exercises: WorkoutExercise[];
+  /** When the current rest countdown ends. Only set on the active workout. */
+  restUntil?: number;
 };
 
 /** A reusable workout type, e.g. "Push Day": just a named list of exercises. */
@@ -61,6 +63,8 @@ type State = {
   draft: Routine | null;
   challenge: Challenge | null;
   trophies: { id: ChallengeId; completedAt: number }[];
+  /** Rest timer length; nudging it with -15/+15 updates this so the next rest uses it. */
+  restSeconds: number;
 };
 
 /** Work out on `days` different days within `windowDays` of starting. */
@@ -116,6 +120,7 @@ const initialState = (): State => ({
   draft: null,
   challenge: null,
   trophies: [],
+  restSeconds: 90,
 });
 
 function load(): State {
@@ -177,14 +182,23 @@ const emptySet = (prev?: WorkoutSet): WorkoutSet => ({
   done: false,
 });
 
-/** Sets for an exercise, copied from the last time it was done so progress is easy to beat. */
-function setsFromLastTime(name: string, history: Workout[]): WorkoutSet[] {
+/** The sets logged for an exercise the last time it was done, or null if never. History is newest first. */
+export function lastSets(name: string, history: Workout[]): WorkoutSet[] | null {
   for (const w of history) {
     const last = w.exercises.find((e) => e.name === name);
-    if (last) return last.sets.map((s) => ({ ...s, id: uid(), done: false }));
+    if (last) return last.sets;
   }
-  return [emptySet()];
+  return null;
 }
+
+/** Sets for an exercise, copied from the last time it was done so progress is easy to beat. */
+function setsFromLastTime(name: string, history: Workout[]): WorkoutSet[] {
+  const last = lastSets(name, history);
+  return last ? last.map((s) => ({ ...s, id: uid(), done: false })) : [emptySet()];
+}
+
+const MIN_REST = 15;
+const MAX_REST = 600;
 
 export const workoutActions = {
   completeOnboarding(acceptChallenge: boolean) {
@@ -230,7 +244,8 @@ export const workoutActions = {
         .map((e) => ({ ...e, sets: e.sets.filter((set) => set.done) }))
         .filter((e) => e.sets.length > 0);
       if (exercises.length === 0) return { ...s, active: null };
-      const finished = { ...s.active, name: s.active.name?.trim() || undefined, exercises, endedAt: Date.now() };
+      const { restUntil: _rest, ...active } = s.active;
+      const finished = { ...active, name: active.name?.trim() || undefined, exercises, endedAt: Date.now() };
       const history = [finished, ...s.history];
       savedId = finished.id;
 
@@ -269,6 +284,22 @@ export const workoutActions = {
   },
   rename(name: string) {
     updateActive((w) => ({ ...w, name }));
+  },
+  /** Starts (or restarts) the rest countdown, called when a set is ticked. */
+  startRest() {
+    setState((s) => (s.active ? { ...s, active: { ...s.active, restUntil: Date.now() + s.restSeconds * 1000 } } : s));
+  },
+  /** Adds or removes time from the running rest, and remembers the new length for next time. */
+  adjustRest(deltaSeconds: number) {
+    setState((s) => {
+      if (!s.active?.restUntil) return s;
+      const restSeconds = Math.min(MAX_REST, Math.max(MIN_REST, s.restSeconds + deltaSeconds));
+      const restUntil = Math.max(Date.now(), s.active.restUntil + deltaSeconds * 1000);
+      return { ...s, restSeconds, active: { ...s.active, restUntil } };
+    });
+  },
+  skipRest() {
+    updateActive(({ restUntil: _rest, ...w }) => w);
   },
   deleteFromHistory(workoutId: string) {
     setState((s) => ({ ...s, history: s.history.filter((w) => w.id !== workoutId) }));

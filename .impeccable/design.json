@@ -75,6 +75,11 @@
         "name": "finish-badge",
         "value": "spring damping 11 stiffness 180 from 0.6",
         "purpose": "Complete screen checkmark or trophy."
+      },
+      {
+        "name": "rest-bar",
+        "value": "fade up 200ms in, fade down 150ms out",
+        "purpose": "Rest timer bar; skipped under Reduce Motion."
       }
     ],
     "breakpoints": [
@@ -169,7 +174,7 @@
     "dos": [
       "Do build new screens from Section, Row, Button, Stat, Icon and ThemedText types.",
       "Do give every empty state a symbol, a title3 line, one sentence and one action.",
-      "Do report progress as what improved (personal records, extra volume), never as a loss.",
+      "Do state progress plainly: gains get the tint (personal records, extra volume); a lighter session is stated in secondary grey, never flagged red.",
       "Do keep every tappable target at least 44 × 44 pt, and every text pair at 4.5:1 or better."
     ],
     "donts": [

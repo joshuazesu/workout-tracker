@@ -207,7 +207,10 @@ Continuous corners (`borderCurve: 'continuous'`) at 14 pt on sections, cards and
 - Native tabs (Profile, History, Start Workout, Exercises) with the green tint. Native stack headers: large titles on tab roots, sheets for the calendar, settings, template editor and Add Exercise. Header buttons are green SF Symbols or text (Finish, Save, Cancel), each 44 pt.
 
 ### Set Row (signature)
-Set number, KG, REPS and a tick box. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box green with a white checkmark, washes the row in Soft Green, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime. Ticking with no reps shakes the box instead of showing a dialog.
+Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box green with a white checkmark, washes the row in Soft Green, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+
+### Rest Timer
+A bar pinned to the bottom of the workout screen (Surface, hairline top border, in thumb reach): a 4 pt tint progress track, −15 and +15 fill capsules, the countdown in title1 tabular figures, and a tinted Skip. Adjusting it also changes the default length for the next rest (15–600 s, 90 s to start). When it ends it plays a chime and a double warning haptic, then hides.
 
 ### Workout Summary Row
 Name, then a relative date with time, duration and volume, then a one-line exercise list. Tapping it fades in the condensed sets ("3 × 8 · 70 kg") over 180 ms; long-pressing deletes the workout.
@@ -217,7 +220,7 @@ Name, then a relative date with time, duration and volume, then a one-line exerc
 ### Do:
 - **Do** build new screens from `Section`, `Row`, `Button`, `Stat`, `Icon` and `ThemedText` types.
 - **Do** give every empty state a symbol, a title3 line, one sentence and one action.
-- **Do** report progress as what improved (personal records, extra volume), never as a loss.
+- **Do** state progress plainly: gains get the tint (personal records, extra volume); a lighter session is stated in secondary grey, never flagged red.
 - **Do** keep every tappable target at least 44 × 44 pt, and every text pair at 4.5:1 or better.
 
 ### Don't:

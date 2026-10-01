@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -17,7 +18,20 @@ import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
 import { workoutActions, type WorkoutExercise, type WorkoutSet } from '@/lib/workouts';
 
-export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise: WorkoutExercise }) {
+/** Last time's set as "70 × 8", or reps alone for bodyweight. */
+function formatPrevious(set: WorkoutSet | undefined) {
+  if (!set) return '–';
+  return Number(set.weight) > 0 ? `${set.weight} × ${set.reps}` : `${set.reps} reps`;
+}
+
+export const ExerciseCard = memo(function ExerciseCard({
+  exercise,
+  previous,
+}: {
+  exercise: WorkoutExercise;
+  /** Sets from the last time this exercise was logged; null if never. */
+  previous: WorkoutSet[] | null;
+}) {
   const theme = useTheme();
 
   return (
@@ -44,6 +58,9 @@ export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise:
         <ThemedText type="caption" themeColor="textSecondary" style={[styles.colSet, styles.header]}>
           SET
         </ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary" style={[styles.colPrevious, styles.header]}>
+          PREVIOUS
+        </ThemedText>
         <ThemedText type="caption" themeColor="textSecondary" style={[styles.colInput, styles.header]}>
           KG
         </ThemedText>
@@ -54,7 +71,7 @@ export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise:
       </View>
 
       {exercise.sets.map((set, index) => (
-        <SetRow key={set.id} exerciseId={exercise.id} set={set} index={index} />
+        <SetRow key={set.id} exerciseId={exercise.id} set={set} index={index} previous={previous?.[index]} />
       ))}
 
       <Pressable
@@ -73,7 +90,17 @@ export const ExerciseCard = memo(function ExerciseCard({ exercise }: { exercise:
   );
 });
 
-function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSet; index: number }) {
+function SetRow({
+  exerciseId,
+  set,
+  index,
+  previous,
+}: {
+  exerciseId: string;
+  set: WorkoutSet;
+  index: number;
+  previous?: WorkoutSet;
+}) {
   const theme = useTheme();
   const inputStyle = [
     styles.input,
@@ -103,65 +130,97 @@ function SetRow({ exerciseId, set, index }: { exerciseId: string; set: WorkoutSe
       if (!reduceMotion) pop.set(withSequence(withTiming(1.2, { duration: 90 }), withSpring(1, { damping: 8 })));
     }
     workoutActions.updateSet(exerciseId, set.id, { done: !set.done });
+    if (!set.done) workoutActions.startRest();
+  };
+
+  const remove = () => {
+    feedback.tap();
+    workoutActions.removeSet(exerciseId, set.id);
   };
 
   return (
-    <View style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accentSoft }]}>
-      <Pressable
-        style={styles.colSet}
-        accessibilityLabel={`Set ${index + 1}. Long-press to remove`}
-        onLongPress={() =>
-          confirm('Remove set', `Remove set ${index + 1}?`, 'Remove', () =>
-            workoutActions.removeSet(exerciseId, set.id)
-          )
-        }>
-        <ThemedText type="subheadline" numeric style={styles.setNumber}>
-          {index + 1}
-        </ThemedText>
-      </Pressable>
-      <TextInput
-        value={set.weight}
-        onChangeText={(weight) =>
-          workoutActions.updateSet(exerciseId, set.id, { weight: weight.replace(',', '.') })
-        }
-        keyboardType="decimal-pad"
-        placeholder="0"
-        placeholderTextColor={theme.textSecondary}
-        selectTextOnFocus
-        accessibilityLabel={`Set ${index + 1} weight in kilograms`}
-        style={[styles.colInput, inputStyle]}
-      />
-      <TextInput
-        value={set.reps}
-        onChangeText={(reps) =>
-          workoutActions.updateSet(exerciseId, set.id, { reps: reps.replace(/\D/g, '') })
-        }
-        keyboardType="number-pad"
-        placeholder="0"
-        placeholderTextColor={theme.textSecondary}
-        selectTextOnFocus
-        accessibilityLabel={`Set ${index + 1} reps`}
-        style={[styles.colInput, inputStyle]}
-      />
-      <Pressable
-        onPress={toggleDone}
-        hitSlop={6}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: set.done }}
-        accessibilityLabel={`Complete set ${index + 1}`}
-        style={styles.colCheck}>
-        <Animated.View
-          style={[
-            styles.check,
-            set.done
-              ? { backgroundColor: theme.accent, borderColor: theme.accent }
-              : { backgroundColor: 'transparent', borderColor: theme.outline },
-            popStyle,
-          ]}>
-          {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onAccent} weight="bold" />}
-        </Animated.View>
-      </Pressable>
-    </View>
+    <ReanimatedSwipeable
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+      // Opaque under the row so the delete action can't show through a ticked set's tint.
+      childrenContainerStyle={[styles.swipeSurface, { backgroundColor: theme.surface }]}
+      renderRightActions={() => (
+        <Pressable
+          onPress={remove}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete set ${index + 1}`}
+          style={[styles.deleteAction, { backgroundColor: theme.destructive }]}>
+          <Icon name={{ ios: 'trash', md: 'delete' }} size={20} color="#FFFFFF" />
+        </Pressable>
+      )}>
+      <View
+        style={[styles.row, styles.setRow, set.done && { backgroundColor: theme.accentSoft }]}
+        accessibilityActions={[{ name: 'delete', label: 'Delete set' }]}
+        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && remove()}>
+        <View style={styles.colSet}>
+          <ThemedText type="subheadline" numeric style={styles.setNumber}>
+            {index + 1}
+          </ThemedText>
+        </View>
+        <Pressable
+          style={styles.colPrevious}
+          disabled={!previous || set.done}
+          onPress={() => {
+            if (!previous) return;
+            feedback.tap();
+            workoutActions.updateSet(exerciseId, set.id, { weight: previous.weight, reps: previous.reps });
+          }}
+          accessibilityRole={previous ? 'button' : undefined}
+          accessibilityLabel={previous ? `Last time ${formatPrevious(previous)}. Tap to copy` : 'No previous set'}>
+          <ThemedText type="footnote" themeColor="textSecondary" numeric numberOfLines={1} style={styles.previousText}>
+            {formatPrevious(previous)}
+          </ThemedText>
+        </Pressable>
+        <TextInput
+          value={set.weight}
+          onChangeText={(weight) =>
+            workoutActions.updateSet(exerciseId, set.id, { weight: weight.replace(',', '.') })
+          }
+          keyboardType="decimal-pad"
+          placeholder="0"
+          placeholderTextColor={theme.textSecondary}
+          selectTextOnFocus
+          accessibilityLabel={`Set ${index + 1} weight in kilograms`}
+          style={[styles.colInput, inputStyle]}
+        />
+        <TextInput
+          value={set.reps}
+          onChangeText={(reps) =>
+            workoutActions.updateSet(exerciseId, set.id, { reps: reps.replace(/\D/g, '') })
+          }
+          keyboardType="number-pad"
+          placeholder="0"
+          placeholderTextColor={theme.textSecondary}
+          selectTextOnFocus
+          accessibilityLabel={`Set ${index + 1} reps`}
+          style={[styles.colInput, inputStyle]}
+        />
+        <Pressable
+          onPress={toggleDone}
+          hitSlop={6}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: set.done }}
+          accessibilityLabel={`Complete set ${index + 1}`}
+          style={styles.colCheck}>
+          <Animated.View
+            style={[
+              styles.check,
+              set.done
+                ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                : { backgroundColor: 'transparent', borderColor: theme.outline },
+              popStyle,
+            ]}>
+            {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onAccent} weight="bold" />}
+          </Animated.View>
+        </Pressable>
+      </View>
+    </ReanimatedSwipeable>
   );
 }
 
@@ -209,6 +268,23 @@ const styles = StyleSheet.create({
   setNumber: {
     textAlign: 'center',
     fontWeight: 600,
+  },
+  swipeSurface: {
+    borderRadius: 10,
+  },
+  colPrevious: {
+    width: 64,
+    justifyContent: 'center',
+  },
+  previousText: {
+    textAlign: 'center',
+  },
+  deleteAction: {
+    width: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    marginLeft: Spacing.two,
   },
   colInput: {
     flex: 1,

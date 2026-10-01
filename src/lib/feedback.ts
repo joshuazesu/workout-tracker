@@ -56,6 +56,13 @@ export const feedback = {
     play('set');
     if (native) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
+  /** Rest is over: a chime and a double buzz you can feel with the phone in a pocket. */
+  restDone() {
+    play('set');
+    if (!native) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    after(250, () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning));
+  },
   /** Workout saved: haptic taps timed to the rising arpeggio. */
   workoutDone() {
     play('finish');

@@ -93,14 +93,24 @@ export default function CompleteScreen() {
                 <Stat label="Volume" value={`${volume.toLocaleString()} kg`} />
                 <Stat label="Sets" value={String(sets)} />
               </View>
-              {/* Only say what improved; a shorter session isn't a failure. */}
-              {previous && volumeDelta > 0 && (
+              {previous && volumeDelta !== 0 && (
                 <>
                   <Separator inset={0} />
                   <View style={styles.compare}>
-                    <Icon name={{ ios: 'arrow.up.right', md: 'trending_up' }} size={16} color={theme.accent} weight="semibold" />
+                    <Icon
+                      name={
+                        volumeDelta > 0
+                          ? { ios: 'arrow.up.right', md: 'trending_up' }
+                          : { ios: 'arrow.down.right', md: 'trending_down' }
+                      }
+                      size={16}
+                      // Gains get the tint; a lighter session is stated plainly, not flagged red.
+                      color={volumeDelta > 0 ? theme.accent : theme.textSecondary}
+                      weight="semibold"
+                    />
                     <ThemedText type="subheadline" themeColor="textSecondary" numeric style={styles.flex}>
-                      {volumeDelta.toLocaleString()} kg more volume than your last {workout.name}
+                      {Math.abs(volumeDelta).toLocaleString()} kg {volumeDelta > 0 ? 'more' : 'less'} volume than your
+                      last {workout.name}
                     </ThemedText>
                   </View>
                 </>
@@ -164,7 +174,7 @@ export default function CompleteScreen() {
           )}
         </View>
       </SafeAreaView>
-      {wonChallenge && <Confetti count={120} />}
+      <Confetti count={wonChallenge ? 120 : 60} />
     </View>
   );
 }

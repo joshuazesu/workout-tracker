@@ -5,16 +5,17 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { Button } from '@/components/button';
 import { ExerciseCard } from '@/components/exercise-card';
 import { Icon } from '@/components/icon';
+import { REST_BAR_HEIGHT, RestTimer } from '@/components/rest-timer';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing, TextStyles } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
-import { formatDuration, workoutActions, workoutVolume, useWorkoutStore } from '@/lib/workouts';
+import { formatDuration, lastSets, workoutActions, workoutVolume, useWorkoutStore } from '@/lib/workouts';
 
 export default function WorkoutScreen() {
   const theme = useTheme();
-  const { active } = useWorkoutStore();
+  const { active, history } = useWorkoutStore();
   // Set when finishing, so the celebration screen replaces this one instead of popping home.
   const finishing = useRef(false);
 
@@ -69,7 +70,7 @@ export default function WorkoutScreen() {
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          contentContainerStyle={styles.content}>
+          contentContainerStyle={[styles.content, active.restUntil ? { paddingBottom: REST_BAR_HEIGHT + Spacing.five } : null]}>
           <View style={styles.titleBlock}>
             <TextInput
               value={active.name ?? ''}
@@ -100,7 +101,7 @@ export default function WorkoutScreen() {
           )}
 
           {active.exercises.map((exercise) => (
-            <ExerciseCard key={exercise.id} exercise={exercise} />
+            <ExerciseCard key={exercise.id} exercise={exercise} previous={lastSets(exercise.name, history)} />
           ))}
 
           <View style={styles.actions}>
@@ -115,6 +116,7 @@ export default function WorkoutScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <RestTimer />
     </>
   );
 }

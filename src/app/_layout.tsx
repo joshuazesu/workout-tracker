@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors } from '@/constants/theme';
@@ -37,31 +38,34 @@ export default function RootLayout() {
   }, [history, challenge]);
 
   return (
-    <ThemeProvider value={navTheme}>
-      <AnimatedSplashOverlay />
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Protected guard={!onboarded}>
-          <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
-        </Stack.Protected>
-        <Stack.Protected guard={onboarded}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="workout" options={{ title: 'Workout', headerBackTitle: 'Back' }} />
-          <Stack.Screen
-            name="add-exercise"
-            options={{
-              title: 'Add Exercise',
-              presentation: 'modal',
-              headerStyle: { backgroundColor: colors.backgroundPlain },
-            }}
-          />
-          <Stack.Screen name="routine" options={{ presentation: 'modal' }} />
-          <Stack.Screen
-            name="complete"
-            options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
-          />
-        </Stack.Protected>
-      </Stack>
-    </ThemeProvider>
+    // Needed for swipe gestures (swipe a set to delete it).
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={navTheme}>
+        <AnimatedSplashOverlay />
+        <StatusBar style="auto" />
+        <Stack>
+          <Stack.Protected guard={!onboarded}>
+            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={onboarded}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="workout" options={{ title: 'Workout', headerBackTitle: 'Back' }} />
+            <Stack.Screen
+              name="add-exercise"
+              options={{
+                title: 'Add Exercise',
+                presentation: 'modal',
+                headerStyle: { backgroundColor: colors.backgroundPlain },
+              }}
+            />
+            <Stack.Screen name="routine" options={{ presentation: 'modal' }} />
+            <Stack.Screen
+              name="complete"
+              options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
+            />
+          </Stack.Protected>
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
