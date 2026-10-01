@@ -136,7 +136,7 @@ It's a mix of three explored directions. The overall ledger is from "Logbook". T
 ## Colors
 
 ### Primary
-- **Logbook Blue** (#0B5FD6 light / #4C95FF dark): text, icons and outlines in the tint. The rest band, primary pills and the suggested play button use **Blue Fill** (#0B5FD6 / #1F6FEB), which keeps white text at 4.6:1 or better.
+- **Logbook Blue** (#0B5FD6 light / #4C95FF dark): text, icons and outlines in the tint. The rest band, primary pills and the template play buttons use **Blue Fill** (#0B5FD6 / #1F6FEB), which keeps white text at 4.6:1 or better.
 - **Blue Mid** (#7FA9EA / #2D6FD6): the middle step of the habit grid (one workout that day).
 
 ### Neutral
@@ -186,7 +186,7 @@ Square ledger. Tick boxes and challenge days are 4 pt squares. Buttons are pills
 ### Buttons
 - **Primary:** Blue Fill pill, white headline, 52 pt. One per screen (Resume workout, Done, Finish workout, Get started).
 - **Tinted:** ink-outlined pill (1.5 pt) with ink label, for secondary actions.
-- **Play:** a 52 pt circle on each template row. It's filled blue for the suggested template (the one done longest ago) and ink-outlined for the rest.
+- **Play:** a 52 pt circle on each template row, filled blue on every template.
 - **Finish:** an ink pill in the workout header.
 - **Plain / Destructive:** text only, blue or red.
 

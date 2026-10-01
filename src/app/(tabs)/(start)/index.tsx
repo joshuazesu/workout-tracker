@@ -52,13 +52,6 @@ export default function StartScreen() {
   const atLimit = routines.length >= MAX_ROUTINES;
   const collapse = useCollapsingTitle();
 
-  // Suggest the template it's been longest since (or one never done): the next in the rotation.
-  const lastDone = (r: Routine) => history.find((w) => w.name === r.name)?.startedAt ?? 0;
-  const suggested = routines.reduce<Routine | undefined>(
-    (best, r) => (!best || lastDone(r) < lastDone(best) ? r : best),
-    undefined
-  );
-
   const start = (routineId?: string) => {
     feedback.tap();
     workoutActions.start(routineId);
@@ -111,7 +104,6 @@ export default function StartScreen() {
                   <TemplateRow
                     routine={r}
                     setCount={r.exercises.reduce((n, name) => n + defaultSetCount(r, name, history), 0)}
-                    highlighted={r.id === suggested?.id}
                     canStart={!active}
                     onStart={() => start(r.id)}
                     onMenu={() => setMenuFor(r)}
@@ -200,7 +192,6 @@ function ResumeCard({ workout }: { workout: Workout }) {
 function TemplateRow({
   routine,
   setCount,
-  highlighted,
   canStart,
   onStart,
   onMenu,
@@ -208,8 +199,6 @@ function TemplateRow({
 }: {
   routine: Routine;
   setCount: number;
-  /** The suggested next template gets the filled play button. */
-  highlighted: boolean;
   canStart: boolean;
   onStart: () => void;
   onMenu: () => void;
@@ -245,13 +234,13 @@ function TemplateRow({
           accessibilityLabel={`Start ${routine.name}`}
           style={({ pressed }) => [
             styles.play,
-            highlighted ? { backgroundColor: theme.accentFill } : { borderWidth: 1.5, borderColor: theme.text },
+            { backgroundColor: theme.accentFill },
             { transform: [{ scale: pressed ? 0.94 : 1 }] },
           ]}>
           <Icon
             name={{ ios: 'play.fill', md: 'play_arrow' }}
             size={20}
-            color={highlighted ? theme.onAccent : theme.text}
+            color={theme.onAccent}
           />
         </Pressable>
       )}
