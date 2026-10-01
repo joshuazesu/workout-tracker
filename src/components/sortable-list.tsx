@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -12,11 +12,14 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { EASE_OUT } from '@/constants/motion';
+import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
 
 /** How long a row has to be held before it lifts. Moving earlier scrolls or swipes instead. */
 const HOLD_MS = 300;
+/** How far the lifted card reaches past the row on each side. */
+const CARD_OUTSET = 12;
 
 type Shared = {
   order: SharedValue<string[]>;
@@ -71,6 +74,16 @@ export function SortableList<T>({
   const active = useSharedValue<string | null>(null);
   const shared = { order, heights, active };
 
+  // Row heights are collected in React state first. Rows lay out in the same frame, and updating
+  // the shared value from each onLayout loses all but one of them on native (each update starts
+  // from a stale copy), which left the unmeasured rows invisible.
+  const [measured, setMeasured] = useState<Record<string, number>>({});
+  const measure = (id: string, height: number) =>
+    setMeasured((h) => (h[id] === height ? h : { ...h, [id]: height }));
+  useEffect(() => {
+    heights.set(measured);
+  }, [measured, heights]);
+
   // After a drop the order is already right on the UI thread; this catches adds, removes and
   // changes made elsewhere.
   useEffect(() => {
@@ -99,6 +112,7 @@ export function SortableList<T>({
           count={items.length}
           label={labelOf(item)}
           shared={shared}
+          onMeasure={measure}
           onLift={() => {
             feedback.lift();
             onDragChange?.(true);
@@ -121,6 +135,7 @@ function SortableRow({
   count,
   label,
   shared,
+  onMeasure,
   onLift,
   onDrop,
   onMove,
@@ -131,6 +146,7 @@ function SortableRow({
   count: number;
   label: string;
   shared: Shared;
+  onMeasure: (id: string, height: number) => void;
   onLift: () => void;
   onDrop: (from: number, to: number) => void;
   onMove: (from: number, to: number) => void;
@@ -216,10 +232,12 @@ function SortableRow({
     return {
       opacity: heights.get()[id] === undefined ? 0 : 1,
       zIndex: active.get() === id ? 10 : 0,
-      transform: [{ translateY: y.get() }, { scale: 1 + 0.03 * l }],
-      shadowOpacity: 0.14 * l,
+      transform: [{ translateY: y.get() }, { scale: 1 + 0.02 * l }],
     };
   });
+  // The lifted row sits on a rounded card a little wider than the row, so it reads as one object
+  // picked up off the page rather than a full-width strip. The card (and its shadow) fades in.
+  const cardStyle = useAnimatedStyle(() => ({ opacity: lift.get() }));
   // The first row in the current order has no rule above it, and neither does the lifted row.
   const ruleStyle = useAnimatedStyle(() => ({
     opacity: order.get()[0] === id || active.get() === id ? 0 : 1,
@@ -228,10 +246,7 @@ function SortableRow({
   return (
     <GestureDetector gesture={pan}>
       <Animated.View
-        onLayout={(e) => {
-          const height = e.nativeEvent.layout.height;
-          heights.set((h) => (h[id] === height ? h : { ...h, [id]: height }));
-        }}
+        onLayout={(e) => onMeasure(id, e.nativeEvent.layout.height)}
         accessibilityActions={[
           ...(index > 0 ? [{ name: 'moveUp', label: `Move ${label} up` }] : []),
           ...(index < count - 1 ? [{ name: 'moveDown', label: `Move ${label} down` }] : []),
@@ -240,7 +255,11 @@ function SortableRow({
           if (e.nativeEvent.actionName === 'moveUp') onMove(index, index - 1);
           if (e.nativeEvent.actionName === 'moveDown') onMove(index, index + 1);
         }}
-        style={[styles.row, { backgroundColor: theme.background, shadowColor: '#000' }, rowStyle]}>
+        style={[styles.row, rowStyle]}>
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.card, { backgroundColor: theme.background, borderColor: theme.separator }, cardStyle]}
+        />
         <Animated.View style={[styles.rule, { backgroundColor: theme.separator }, ruleStyle]} />
         {children}
       </Animated.View>
@@ -254,8 +273,21 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
+  },
+  card: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: -CARD_OUTSET,
+    right: -CARD_OUTSET,
+    borderRadius: Radius,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   rule: {
     height: StyleSheet.hairlineWidth * 2,
