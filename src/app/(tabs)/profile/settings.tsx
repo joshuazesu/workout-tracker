@@ -3,12 +3,20 @@ import * as ImagePicker from 'expo-image-picker';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { Icon } from '@/components/icon';
+import { Row, Section } from '@/components/list';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
-import { profileActions, useWorkoutStore, workoutActions } from '@/lib/workouts';
+import { type Appearance, profileActions, useWorkoutStore, workoutActions } from '@/lib/workouts';
+
+const APPEARANCES: { value: Appearance; label: string }[] = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 /** Picker results live in a cache the OS can purge, so keep a copy in the documents folder. */
 async function persistPhoto(uri: string, previous?: string): Promise<string> {
@@ -25,7 +33,7 @@ async function persistPhoto(uri: string, previous?: string): Promise<string> {
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { profile, history } = useWorkoutStore();
+  const { profile, history, appearance } = useWorkoutStore();
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -94,6 +102,28 @@ export default function SettingsScreen() {
         </Field>
       </View>
 
+      <Section
+        title="Appearance"
+        footer="System follows your phone’s Light or Dark setting."
+        style={styles.appearance}>
+        {APPEARANCES.map((a) => (
+          <Row
+            key={a.value}
+            label={a.label}
+            onPress={() => {
+              feedback.tap();
+              profileActions.setAppearance(a.value);
+            }}
+            accessibilityLabel={`${a.label}${appearance === a.value ? ', selected' : ''}`}
+            trailing={
+              appearance === a.value ? (
+                <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.accent} weight="semibold" />
+              ) : undefined
+            }
+          />
+        ))}
+      </Section>
+
       <ThemedText type="title3" style={styles.groupTitle} accessibilityRole="header">
         Data
       </ThemedText>
@@ -154,6 +184,9 @@ const styles = StyleSheet.create({
   },
   groupLabel: {
     paddingHorizontal: Spacing.three,
+  },
+  appearance: {
+    marginTop: Spacing.three,
   },
   groupTitle: {
     fontWeight: 700,

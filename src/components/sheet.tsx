@@ -139,7 +139,59 @@ function PromptBody({
   );
 }
 
+/** A centred dialog with free-form content and two choices, for questions that need more than a line. */
+export function ChoiceDialog({
+  visible,
+  title,
+  message,
+  children,
+  confirmLabel,
+  cancelLabel,
+  onConfirm,
+  onCancel,
+}: {
+  visible: boolean;
+  title: string;
+  message?: string;
+  children?: React.ReactNode;
+  confirmLabel: string;
+  cancelLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={[styles.backdrop, styles.center]}>
+        <View style={[styles.dialog, { backgroundColor: theme.surface }]} accessibilityViewIsModal>
+          <View style={styles.dialogText}>
+            <ThemedText type="headline" style={styles.dialogTitle}>
+              {title}
+            </ThemedText>
+            {message && (
+              <ThemedText type="subheadline" themeColor="textSecondary" style={styles.dialogTitle}>
+                {message}
+              </ThemedText>
+            )}
+          </View>
+          {children}
+          <View style={styles.choiceButtons}>
+            <Button label={confirmLabel} onPress={onConfirm} />
+            <Button label={cancelLabel} variant="plain" onPress={onCancel} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
+  dialogText: {
+    gap: Spacing.one,
+  },
+  choiceButtons: {
+    gap: Spacing.one,
+  },
   flex: {
     flex: 1,
   },

@@ -1,23 +1,33 @@
 import { router, Stack } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ExerciseCard } from '@/components/exercise-card';
 import { Icon } from '@/components/icon';
 import { REST_BAR_HEIGHT, RestTimer } from '@/components/rest-timer';
+import { ChoiceDialog } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing, TextStyles } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
-import { formatDuration, lastSets, workoutActions, workoutVolume, useWorkoutStore } from '@/lib/workouts';
+import {
+  formatDuration,
+  lastSets,
+  routineActions,
+  templateSetChanges,
+  workoutActions,
+  workoutVolume,
+  useWorkoutStore,
+} from '@/lib/workouts';
 
 export default function WorkoutScreen() {
   const theme = useTheme();
-  const { active, history } = useWorkoutStore();
+  const { active, history, routines } = useWorkoutStore();
   // Set when finishing, so the celebration screen replaces this one instead of popping home.
   const finishing = useRef(false);
+  const [askTemplate, setAskTemplate] = useState(false);
 
   // Leave once the workout is finished or discarded (or if opened with none active).
   useEffect(() => {
@@ -28,6 +38,7 @@ export default function WorkoutScreen() {
 
   const completedSets = active.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
   const volume = Math.round(workoutVolume(active));
+  const templateChanges = templateSetChanges(active, routines);
 
   const finish = () => {
     if (completedSets === 0) {
@@ -39,9 +50,30 @@ export default function WorkoutScreen() {
       );
       return;
     }
+    // Set counts changed against the template: ask whether to keep them before saving.
+    if (templateChanges && !askTemplate) {
+      setAskTemplate(true);
+      return;
+    }
+    save();
+  };
+
+  const save = () => {
     finishing.current = true;
     const id = workoutActions.finish();
     if (id) router.replace({ pathname: '/complete', params: { id } });
+  };
+
+  const answerTemplate = (update: boolean) => {
+    if (update && templateChanges) {
+      routineActions.updateSetCounts(
+        templateChanges.routine.id,
+        Object.fromEntries(templateChanges.changes.map((c) => [c.name, c.to]))
+      );
+    }
+    setAskTemplate(false);
+    // iOS can't present the next screen while this modal is still fading out.
+    setTimeout(save, 300);
   };
 
   const discard = () =>
@@ -117,6 +149,29 @@ export default function WorkoutScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
       <RestTimer />
+      {templateChanges && (
+        <ChoiceDialog
+          visible={askTemplate}
+          title={`Update “${templateChanges.routine.name}”?`}
+          message="You changed the number of sets. Save the new counts to the template for next time?"
+          confirmLabel="Update Template"
+          cancelLabel="Keep Template As Is"
+          onConfirm={() => answerTemplate(true)}
+          onCancel={() => answerTemplate(false)}>
+          <View style={[styles.changes, { backgroundColor: theme.fill }]}>
+            {templateChanges.changes.map((c) => (
+              <View key={c.name} style={styles.change}>
+                <ThemedText type="subheadline" style={styles.flex} numberOfLines={1}>
+                  {c.name}
+                </ThemedText>
+                <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+                  {c.from} → <ThemedText type="subheadline" numeric style={styles.changeTo}>{c.to} sets</ThemedText>
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        </ChoiceDialog>
+      )}
     </>
   );
 }
@@ -168,6 +223,20 @@ const styles = StyleSheet.create({
   },
   center: {
     textAlign: 'center',
+  },
+  changes: {
+    borderRadius: 10,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three - 4,
+    gap: Spacing.two,
+  },
+  change: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  changeTo: {
+    fontWeight: 600,
   },
   actions: {
     gap: Spacing.two,

@@ -4,11 +4,12 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { Icon } from '@/components/icon';
 import { Row, RowIconInset, Section } from '@/components/list';
+import { Stepper } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TextStyles } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
-import { routineActions, useWorkoutStore } from '@/lib/workouts';
+import { MAX_SETS, MIN_SETS, routineActions, useWorkoutStore } from '@/lib/workouts';
 
 /** Create or edit a workout type. Edits a store draft so the add-exercise modal can append to it. */
 export default function RoutineScreen() {
@@ -68,8 +69,8 @@ export default function RoutineScreen() {
           title="Exercises"
           footer={
             draft.exercises.length === 0
-              ? 'Add the exercises you do in this workout. Sets and weights fill in from your last session.'
-              : undefined
+              ? 'Add the exercises you do in this workout. Weights fill in from your last session.'
+              : 'Set how many sets each exercise gets. You can still add or remove sets during a workout.'
           }
           inset={RowIconInset}>
           {draft.exercises.map((name) => (
@@ -81,9 +82,19 @@ export default function RoutineScreen() {
                 onPress={() => routineActions.removeExercise(name)}>
                 <Icon name={{ ios: 'minus.circle.fill', md: 'do_not_disturb_on' }} size={22} color={theme.destructive} />
               </Pressable>
-              <ThemedText style={styles.flex} numberOfLines={1}>
-                {name}
-              </ThemedText>
+              <View style={styles.flex}>
+                <ThemedText numberOfLines={1}>{name}</ThemedText>
+                <ThemedText type="subheadline" themeColor="textSecondary" numeric>
+                  {draft.sets?.[name] ?? 3} {(draft.sets?.[name] ?? 3) === 1 ? 'set' : 'sets'}
+                </ThemedText>
+              </View>
+              <Stepper
+                value={draft.sets?.[name] ?? 3}
+                min={MIN_SETS}
+                max={MAX_SETS}
+                onChange={(count) => routineActions.setSetCount(name, count)}
+                label={`${name} sets`}
+              />
             </View>
           ))}
           <Row

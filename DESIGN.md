@@ -2,9 +2,10 @@
 name: Workout Tracker
 description: A habit-first iPhone workout log in the native grouped-list idiom.
 colors:
-  tint-green: "#1E7B34"
-  tint-green-dark: "#30D158"
-  tint-green-soft: "#1E7B341A"
+  tint-blue: "#0064D2"
+  tint-blue-dark: "#0A84FF"
+  tint-blue-fill-dark: "#0060DF"
+  tint-blue-soft: "#0064D21A"
   on-tint: "#FFFFFF"
   label: "#000000"
   secondary-label: "#6C6C70"
@@ -79,20 +80,20 @@ spacing:
   xl: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.tint-green}"
+    backgroundColor: "{colors.tint-blue}"
     textColor: "{colors.on-tint}"
     typography: "{typography.headline}"
     rounded: "{rounded.section}"
     height: "50px"
   button-tinted:
-    backgroundColor: "{colors.tint-green-soft}"
-    textColor: "{colors.tint-green}"
+    backgroundColor: "{colors.tint-blue-soft}"
+    textColor: "{colors.tint-blue}"
     typography: "{typography.headline}"
     rounded: "{rounded.section}"
     height: "50px"
   button-tinted-small:
-    backgroundColor: "{colors.tint-green-soft}"
-    textColor: "{colors.tint-green}"
+    backgroundColor: "{colors.tint-blue-soft}"
+    textColor: "{colors.tint-blue}"
     typography: "{typography.subheadline}"
     rounded: "{rounded.capsule}"
     height: "32px"
@@ -120,7 +121,7 @@ components:
 
 The app should feel like it shipped on the iPhone, sitting between Apple Fitness and Health. Screens are inset grouped lists on the system grey. Content sits in white rounded sections with hairline separators, and SF Symbols are the only icons. The system type ramp carries the hierarchy, so there is no display face and no decoration.
 
-Calm is the default. Green is the single tint, and it marks only what the user should act on or has earned: a Start or Resume button, a ticked set, challenge progress, a personal record. Everything else is label, secondary label and grey. The loudest moments are the ones the product is about: ticking a set, finishing a workout, winning a challenge.
+Calm is the default, and dark mode is true black. Blue is the single tint, and it marks only what the user should act on or has earned: a Start or Resume button, a ticked set, challenge progress, a personal record. Everything else is label, secondary label and grey. The loudest moments are the ones the product is about: ticking a set, finishing a workout, winning a challenge.
 
 **Key Characteristics:**
 - Grouped grey background, white 14 pt continuous-corner sections, hairline separators inset to the text.
@@ -131,11 +132,12 @@ Calm is the default. Green is the single tint, and it marks only what the user s
 
 ## Colors
 
-A neutral iOS system palette with one rationed green tint.
+A neutral iOS system palette with one rationed blue tint.
 
 ### Primary
-- **Logbook Green** (#1E7B34 light / #30D158 dark): the only interactive tint. Used for filled primary buttons (white text, 5.3:1), tinted buttons, ticked sets, filled challenge dots, workout days in the calendar and consistency grid, header bar buttons and the active tab.
-- **Soft Green** (#1E7B34 at 10% / #30D158 at 16%): tinted button fills and the wash behind a ticked set row.
+- **Logbook Blue** (#0064D2 light / #0A84FF dark): the only interactive tint, for text, icons and outlines. It's a deeper blue than iOS's #007AFF, which only reaches 4.0:1 on white; this one reaches 5.6:1. Used for tinted buttons, ticked sets, challenge dots, the consistency grid, header bar buttons and the active tab.
+- **Blue Fill** (#0064D2 light / #0060DF dark): the tint behind white text, i.e. primary buttons, ticked set boxes and calendar workout days. Dark mode needs the deeper fill because white on #0A84FF is only 3.6:1.
+- **Soft Blue** (#0064D2 at 10% / #0A84FF at 16%): tinted button fills and the wash behind a ticked set row.
 
 ### Neutral
 - **Label** (#000000 / #FFFFFF): primary text.
@@ -149,7 +151,7 @@ A neutral iOS system palette with one rationed green tint.
 - **Destructive Red** (#D70015 / #FF453A): Discard, Delete, Reset, and remove symbols only.
 
 ### Named Rules
-**The Rationed Tint Rule.** Green marks action or achievement, roughly four times per screen. A navigation row, a section title, an exercise name or a stat is never green.
+**The Rationed Tint Rule.** Blue marks action or achievement, roughly four times per screen. A navigation row, a section title, an exercise name or a stat is never blue.
 
 **The No Raw Hex Rule.** Screens read colors from `useTheme()`; only `constants/theme.ts` holds hex values.
 
@@ -190,24 +192,30 @@ Continuous corners (`borderCurve: 'continuous'`) at 14 pt on sections, cards and
 ## Components
 
 ### Buttons
-- **Primary:** filled green, white headline label, 50 pt tall, 14 pt corners. One per screen: Resume Workout, Done, Finish Workout, Get Started, or Add Exercise in an empty workout.
-- **Tinted:** soft green fill with a green label. For secondary actions such as Start Challenge, Add Exercise, Start a Workout, Add Your Name, and the template Start capsule (small, 32 pt with a play symbol).
-- **Plain / Destructive:** text only, green or red. Used for Not Now, Discard Workout, Cancel.
+- **Primary:** filled Blue Fill, white headline label, 50 pt tall, 14 pt corners. One per screen: Resume Workout, Done, Finish Workout, Get Started, or Add Exercise in an empty workout.
+- **Tinted:** Soft Blue fill with a blue label. For secondary actions such as Start Challenge, Add Exercise, Start a Workout, Add Your Name, and the template Start capsule (small, 32 pt with a play symbol).
+- **Plain / Destructive:** text only, blue or red. Used for Not Now, Discard Workout, Cancel.
 - **Press:** scale 0.97 and opacity 0.85, at once on press. Disabled is 40% opacity.
 
 ### Sections and Rows (`components/list.tsx`)
 - `Section` gives a bold title3 heading with optional trailing text, a white rounded surface with automatic hairline separators, and an optional footnote.
-- `Row` gives a 44 pt minimum height, an optional leading symbol (green for actions, grey for navigation), a label and detail, and trailing content or a chevron. Pressed rows turn Fill Strong.
+- `Row` gives a 44 pt minimum height, an optional leading symbol (blue for actions, grey for navigation), a label and detail, and trailing content or a chevron. Pressed rows turn Fill Strong.
 
 ### Inputs
 - **Set fields:** Fill background, 36 pt tall, 8 pt corners, centred 17 pt semibold tabular figures. They go transparent once the set is ticked.
 - **Search:** a 36 pt Fill capsule with a magnifying-glass symbol. On iOS the native header search bar is used instead.
 
 ### Navigation
-- Native tabs (Profile, History, Start Workout, Exercises) with the green tint. Native stack headers: large titles on tab roots, sheets for the calendar, settings, template editor and Add Exercise. Header buttons are green SF Symbols or text (Finish, Save, Cancel), each 44 pt.
+- Native tabs (Profile, History, Start Workout, Exercises) with the blue tint. Native stack headers: large titles on tab roots, sheets for the calendar, settings, template editor and Add Exercise. Header buttons are blue SF Symbols or text (Finish, Save, Cancel), each 44 pt.
 
 ### Set Row (signature)
-Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Empty fields show the suggested value (the nearest earlier set, else last time) as a grey placeholder. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box green with a white checkmark, washes the row in Soft Green, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+Set number, PREVIOUS (last time's set as "70 × 8" in footnote grey; tap it to copy into the inputs), KG, REPS and a tick box. Swipe a set left to reveal a red trash action that deletes it; VoiceOver gets a "Delete set" action instead. Empty fields show the suggested value (the nearest earlier set, else last time) as a grey placeholder. Unticked, the box is an empty rounded square with a 1.5 pt Outline border. Ticking it fills the box Blue Fill with a white checkmark, washes the row in Soft Blue, pops it with a spring (scale 1.2 → 1, skipped under Reduce Motion) and plays the set-done haptic and chime, and starts the rest timer. Ticking with no reps shakes the box instead of showing a dialog.
+
+### Stepper
+The iOS − | + capsule (Fill background, 32 pt tall, a hairline divider, glyphs greyed out at the limits). It sits beside "N sets" on each exercise in the template editor. Screen readers treat it as an adjustable control.
+
+### Appearance
+Settings has an Appearance group with System, Light and Dark rows; the selected row shows a blue checkmark. System follows the phone. On native, the choice also drives `Appearance.setColorScheme`, so tabs, alerts and the keyboard match.
 
 ### Swipe Actions
 Swipe left reveals one red action, 84 pt wide, with a white symbol over a caption label: Delete on set rows and template rows, Discard on the In Progress card. The action runs on tap, never on a full swipe, and anything that loses work asks for confirmation first.
@@ -228,7 +236,8 @@ Name, then a relative date with time, duration and volume, then a one-line exerc
 
 ### Don't:
 - **Don't** use emoji or text glyphs (✓ ✕ ‹ › •••) as icons; use `Icon` with an SF Symbol and Material name.
-- **Don't** put grey cards on a white background or stack full-width green buttons; that was the incumbent look this system replaced.
-- **Don't** tint exercise names, stats, section titles or navigation rows green.
+- **Don't** put grey cards on a white background or stack full-width filled buttons; that was the incumbent look this system replaced.
+- **Don't** tint exercise names, stats, section titles or navigation rows blue.
+- **Don't** put white text on `accent`; use `accentFill`.
 - **Don't** add uppercase eyebrow labels above headings; section titles are sentence-case title3.
 - **Don't** add shadows or gradients.

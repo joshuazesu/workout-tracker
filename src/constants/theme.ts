@@ -1,7 +1,7 @@
 /**
  * iOS-style semantic colors and type scale. Screens sit on the grouped `background`, content sits in
- * white `surface` sections, and `accent` is the single tint: keep it for primary actions, ticked sets
- * and progress, not decoration.
+ * white `surface` sections, and `accent` (blue) is the single tint: keep it for primary actions, ticked
+ * sets and progress, not decoration. Anything filled with the tint and carrying text uses `accentFill`.
  */
 
 import '@/global.css';
@@ -25,10 +25,13 @@ export const Colors = {
     separator: '#C6C6C8',
     /** Borders of empty controls, e.g. an unticked set. Meets 3:1 against surfaces. */
     outline: '#8E8E93',
-    accent: '#1E7B34',
+    /** Tint for text, icons and outlines. 5.6:1 on white. */
+    accent: '#0064D2',
+    /** Tint as a fill behind `onAccent` text (primary buttons, ticked boxes, calendar days). */
+    accentFill: '#0064D2',
     onAccent: '#FFFFFF',
     /** Tinted buttons and ticked set rows. */
-    accentSoft: '#1E7B341A',
+    accentSoft: '#0064D21A',
     destructive: '#D70015',
     avatar: '#8E8E93',
   },
@@ -42,9 +45,11 @@ export const Colors = {
     fillStrong: '#3A3A3C',
     separator: '#38383A',
     outline: '#8E8E93',
-    accent: '#30D158',
-    onAccent: '#000000',
-    accentSoft: '#30D15829',
+    accent: '#0A84FF',
+    // iOS blue is too light for white text, so fills use a deeper blue (5.6:1 with white).
+    accentFill: '#0060DF',
+    onAccent: '#FFFFFF',
+    accentSoft: '#0A84FF29',
     destructive: '#FF453A',
     avatar: '#636366',
   },

@@ -103,7 +103,7 @@ export default function CalendarScreen() {
                 <View
                   style={[
                     styles.day,
-                    worked && { backgroundColor: theme.accent },
+                    worked && { backgroundColor: theme.accentFill },
                     isSelected && { borderColor: worked ? theme.text : theme.outline },
                   ]}>
                   <ThemedText

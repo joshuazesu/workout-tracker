@@ -34,7 +34,7 @@ export function Button({
 }: Props) {
   const theme = useTheme();
   const background =
-    variant === 'primary' ? theme.accent : variant === 'tinted' ? theme.accentSoft : 'transparent';
+    variant === 'primary' ? theme.accentFill : variant === 'tinted' ? theme.accentSoft : 'transparent';
   const color =
     variant === 'primary' ? theme.onAccent : variant === 'destructive' ? theme.destructive : theme.accent;
 

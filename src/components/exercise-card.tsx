@@ -223,7 +223,7 @@ function SetRow({
             style={[
               styles.check,
               set.done
-                ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                ? { backgroundColor: theme.accentFill, borderColor: theme.accentFill }
                 : { backgroundColor: 'transparent', borderColor: theme.outline },
               popStyle,
             ]}>

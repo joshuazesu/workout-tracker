@@ -15,6 +15,10 @@ export type WorkoutExercise = {
   id: string;
   name: string;
   sets: WorkoutSet[];
+  /** Set count the template asked for, when the workout was started from one. */
+  templateSets?: number;
+  /** Last time a set was added or removed, so template changes can be listed in order. */
+  setsChangedAt?: number;
 };
 
 export type Workout = {
@@ -26,6 +30,8 @@ export type Workout = {
   exercises: WorkoutExercise[];
   /** When the current rest countdown ends. Only set on the active workout. */
   restUntil?: number;
+  /** The template this workout was started from. Only set on the active workout. */
+  routineId?: string;
 };
 
 /** A reusable workout type, e.g. "Push Day": just a named list of exercises. */
@@ -33,7 +39,14 @@ export type Routine = {
   id: string;
   name: string;
   exercises: string[];
+  /** Sets per exercise, keyed by exercise name. Missing entries fall back to `defaultSetCount`. */
+  sets?: Record<string, number>;
 };
+
+export type Appearance = 'system' | 'light' | 'dark';
+
+export const MIN_SETS = 1;
+export const MAX_SETS = 10;
 
 export type ChallengeId = 'kickstart' | 'builder' | 'habit';
 
@@ -65,6 +78,8 @@ type State = {
   trophies: { id: ChallengeId; completedAt: number }[];
   /** Rest timer length; nudging it with -15/+15 updates this so the next rest uses it. */
   restSeconds: number;
+  /** Light or dark mode, or follow the phone. */
+  appearance: Appearance;
 };
 
 /** Work out on `days` different days within `windowDays` of starting. */
@@ -121,6 +136,7 @@ const initialState = (): State => ({
   challenge: null,
   trophies: [],
   restSeconds: 90,
+  appearance: 'system',
 });
 
 function load(): State {
@@ -197,6 +213,40 @@ function setsFromLastTime(name: string, history: Workout[]): WorkoutSet[] {
   return last ? last.map((s) => ({ ...s, id: uid(), done: false })) : [emptySet()];
 }
 
+/** How many sets a template does for an exercise: its saved count, else last time's, else 3. */
+export function defaultSetCount(routine: Routine, name: string, history: Workout[]): number {
+  return routine.sets?.[name] ?? lastSets(name, history)?.length ?? 3;
+}
+
+/** `count` sets prefilled from last time; extra sets repeat the last one. */
+function setsForTemplate(name: string, count: number, history: Workout[]): WorkoutSet[] {
+  const last = lastSets(name, history);
+  return Array.from({ length: count }, (_, i) => {
+    const from = last?.[i] ?? last?.at(-1);
+    return { id: uid(), weight: from?.weight ?? '', reps: from?.reps ?? '', done: false };
+  });
+}
+
+/**
+ * Template exercises whose set count was changed during the active workout, in the order they
+ * were changed. Used to offer updating the template when the workout is finished.
+ */
+export function templateSetChanges(workout: Workout, routines: Routine[]) {
+  const routine = routines.find((r) => r.id === workout.routineId);
+  if (!routine) return null;
+  const changes = workout.exercises
+    .filter(
+      (e) =>
+        e.setsChangedAt !== undefined &&
+        e.templateSets !== undefined &&
+        routine.exercises.includes(e.name) &&
+        e.sets.length !== e.templateSets
+    )
+    .sort((a, b) => a.setsChangedAt! - b.setsChangedAt!)
+    .map((e) => ({ name: e.name, from: e.templateSets!, to: e.sets.length }));
+  return changes.length > 0 ? { routine, changes } : null;
+}
+
 const MIN_REST = 15;
 const MAX_REST = 600;
 
@@ -221,12 +271,12 @@ export const workoutActions = {
         active: {
           id: uid(),
           name: routine?.name,
+          routineId: routine?.id,
           startedAt: Date.now(),
-          exercises: (routine?.exercises ?? []).map((name) => ({
-            id: uid(),
-            name,
-            sets: setsFromLastTime(name, s.history),
-          })),
+          exercises: (routine?.exercises ?? []).map((name) => {
+            const count = defaultSetCount(routine!, name, s.history);
+            return { id: uid(), name, sets: setsForTemplate(name, count, s.history), templateSets: count };
+          }),
         },
       };
     });
@@ -241,10 +291,10 @@ export const workoutActions = {
       if (!s.active) return s;
       // Keep only completed sets; drop exercises with none.
       const exercises = s.active.exercises
-        .map((e) => ({ ...e, sets: e.sets.filter((set) => set.done) }))
+        .map(({ templateSets: _t, setsChangedAt: _c, ...e }) => ({ ...e, sets: e.sets.filter((set) => set.done) }))
         .filter((e) => e.sets.length > 0);
       if (exercises.length === 0) return { ...s, active: null };
-      const { restUntil: _rest, ...active } = s.active;
+      const { restUntil: _rest, routineId: _routine, ...active } = s.active;
       const finished = { ...active, name: active.name?.trim() || undefined, exercises, endedAt: Date.now() };
       const history = [finished, ...s.history];
       savedId = finished.id;
@@ -271,10 +321,18 @@ export const workoutActions = {
     updateActive((w) => ({ ...w, exercises: w.exercises.filter((e) => e.id !== exerciseId) }));
   },
   addSet(exerciseId: string) {
-    updateExercise(exerciseId, (e) => ({ ...e, sets: [...e.sets, emptySet(e.sets.at(-1))] }));
+    updateExercise(exerciseId, (e) => ({
+      ...e,
+      sets: [...e.sets, emptySet(e.sets.at(-1))],
+      setsChangedAt: Date.now(),
+    }));
   },
   removeSet(exerciseId: string, setId: string) {
-    updateExercise(exerciseId, (e) => ({ ...e, sets: e.sets.filter((s) => s.id !== setId) }));
+    updateExercise(exerciseId, (e) => ({
+      ...e,
+      sets: e.sets.filter((s) => s.id !== setId),
+      setsChangedAt: Date.now(),
+    }));
   },
   /**
    * Edits a set. A weight or reps edit also flows down to the later sets that still hold the old
@@ -331,6 +389,9 @@ export const profileActions = {
   update(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
+  setAppearance(appearance: Appearance) {
+    setState((s) => ({ ...s, appearance }));
+  },
 };
 
 export const routineActions = {
@@ -341,7 +402,14 @@ export const routineActions = {
   edit(routineId?: string): boolean {
     const existing = state.routines.find((r) => r.id === routineId);
     if (!existing && state.routines.length >= MAX_ROUTINES) return false;
-    setState((s) => ({ ...s, draft: existing ? { ...existing } : { id: uid(), name: '', exercises: [] } }));
+    // Spell out every exercise's set count so the editor shows exactly what a workout will use.
+    const draft = existing
+      ? {
+          ...existing,
+          sets: Object.fromEntries(existing.exercises.map((n) => [n, defaultSetCount(existing, n, state.history)])),
+        }
+      : { id: uid(), name: '', exercises: [], sets: {} };
+    setState((s) => ({ ...s, draft }));
     return true;
   },
   /** Returns false when at MAX_ROUTINES. */
@@ -367,10 +435,32 @@ export const routineActions = {
     updateDraft((r) => ({ ...r, name }));
   },
   addExercise(name: string) {
-    updateDraft((r) => (r.exercises.includes(name) ? r : { ...r, exercises: [...r.exercises, name] }));
+    updateDraft((r) =>
+      r.exercises.includes(name)
+        ? r
+        : {
+            ...r,
+            exercises: [...r.exercises, name],
+            sets: { ...r.sets, [name]: lastSets(name, state.history)?.length ?? 3 },
+          }
+    );
   },
   removeExercise(name: string) {
-    updateDraft((r) => ({ ...r, exercises: r.exercises.filter((e) => e !== name) }));
+    updateDraft((r) => {
+      const { [name]: _removed, ...sets } = r.sets ?? {};
+      return { ...r, exercises: r.exercises.filter((e) => e !== name), sets };
+    });
+  },
+  /** Sets the draft's set count for one exercise, clamped to MIN_SETS–MAX_SETS. */
+  setSetCount(name: string, count: number) {
+    updateDraft((r) => ({ ...r, sets: { ...r.sets, [name]: Math.min(MAX_SETS, Math.max(MIN_SETS, count)) } }));
+  },
+  /** Saves set counts changed during a workout back to its template. */
+  updateSetCounts(routineId: string, counts: Record<string, number>) {
+    setState((s) => ({
+      ...s,
+      routines: s.routines.map((r) => (r.id === routineId ? { ...r, sets: { ...r.sets, ...counts } } : r)),
+    }));
   },
   save() {
     setState((s) => {
