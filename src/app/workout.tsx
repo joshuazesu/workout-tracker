@@ -1,14 +1,16 @@
 import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { FadeInDown, FadeOut, LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
-import { ExerciseCard } from '@/components/exercise-card';
+import { ExerciseCard, rowLayout } from '@/components/exercise-card';
 import { ProgressRing } from '@/components/progress-ring';
 import { Icon } from '@/components/icon';
 import { REST_BAR_HEIGHT, RestTimer } from '@/components/rest-timer';
 import { ChoiceDialog } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT } from '@/constants/motion';
 import { Gutter, MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,17 +25,38 @@ import {
   useWorkoutStore,
 } from '@/lib/workouts';
 
+/** Wait for the add-exercise modal to finish closing, so the new card arrives where you can see it. */
+const CARD_DELAY = 250;
+const cardEntering = FadeInDown.duration(220)
+  .delay(CARD_DELAY)
+  .easing(EASE_OUT)
+  .withInitialValues({ opacity: 0, transform: [{ translateY: 8 }] });
+const cardExiting = FadeOut.duration(150);
+
 export default function WorkoutScreen() {
   const theme = useTheme();
   const { active, history, routines } = useWorkoutStore();
   // Set when finishing, so the celebration screen replaces this one instead of popping home.
   const finishing = useRef(false);
   const [askTemplate, setAskTemplate] = useState(false);
+  const scroll = useRef<ScrollView>(null);
 
   // Leave once the workout is finished or discarded (or if opened with none active).
   useEffect(() => {
     if (!active && !finishing.current && router.canGoBack()) router.back();
   }, [active]);
+
+  // A newly added exercise lands at the bottom, often off-screen: bring it into view once the
+  // add-exercise modal has gone.
+  const exerciseCount = active?.exercises.length ?? 0;
+  const previousCount = useRef(exerciseCount);
+  useEffect(() => {
+    const added = exerciseCount > previousCount.current;
+    previousCount.current = exerciseCount;
+    if (!added) return;
+    const timer = setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), CARD_DELAY);
+    return () => clearTimeout(timer);
+  }, [exerciseCount]);
 
   if (!active) return null;
 
@@ -107,6 +130,7 @@ export default function WorkoutScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}>
         <ScrollView
+          ref={scroll}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -144,11 +168,20 @@ export default function WorkoutScreen() {
             </View>
           )}
 
-          {active.exercises.map((exercise) => (
-            <ExerciseCard key={exercise.id} exercise={exercise} previous={lastSets(exercise.name, history)} />
-          ))}
+          {/* Cards already there when the screen opens don't animate in; ones added later do. */}
+          <LayoutAnimationConfig skipEntering>
+            {active.exercises.map((exercise) => (
+              // Entrance and reflow on separate views. Reanimated web collapses a view that mounts with an
+              // entrance behind a modal, so on web the card just appears.
+              <Animated.View key={exercise.id} exiting={cardExiting} layout={rowLayout}>
+                <Animated.View entering={Platform.OS === 'web' ? undefined : cardEntering}>
+                  <ExerciseCard exercise={exercise} previous={lastSets(exercise.name, history)} />
+                </Animated.View>
+              </Animated.View>
+            ))}
+          </LayoutAnimationConfig>
 
-          <View style={styles.actions}>
+          <Animated.View layout={rowLayout} style={styles.actions}>
             <Button
               label="Add exercise"
               variant={active.exercises.length === 0 ? 'primary' : 'tinted'}
@@ -157,7 +190,7 @@ export default function WorkoutScreen() {
             />
             {completedSets > 0 && <Button label="Finish workout" onPress={finish} />}
             <Button label="Discard workout" variant="destructive" onPress={discard} />
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
       <RestTimer />

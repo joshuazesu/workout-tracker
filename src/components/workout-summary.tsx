@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, { cubicBezier, FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
@@ -10,6 +10,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { formatMinutes, relativeDay, summarizeSets } from '@/lib/format';
 import { type Workout, workoutActions, workoutVolume } from '@/lib/workouts';
+
+// The same strong ease-out as EASE_OUT, in the form CSS transitions take.
+const chevronEasing = cubicBezier(0.23, 1, 0.32, 1);
 
 /**
  * One finished workout as a list row: name, when, how long and how much. Tap to expand the sets,
@@ -47,9 +50,15 @@ export function WorkoutSummary({ workout, initiallyOpen = false }: { workout: Wo
             {volume > 0 ? ` · ${volume.toLocaleString()} kg` : ''}
           </ThemedText>
         </View>
-        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+        <Animated.View
+          style={{
+            transform: [{ rotate: open ? '90deg' : '0deg' }],
+            transitionProperty: 'transform',
+            transitionDuration: reduceMotion ? 0 : 200,
+            transitionTimingFunction: chevronEasing,
+          }}>
           <Icon name={{ ios: 'chevron.right', md: 'chevron_right' }} size={14} color={theme.textSecondary} weight="semibold" />
-        </View>
+        </Animated.View>
       </View>
 
       {open ? (

@@ -1,4 +1,13 @@
+import { useEffect } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
@@ -7,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
+import { feedback } from '@/lib/feedback';
 import { useRemindersEnabled } from '@/lib/reminders';
 import {
   CHALLENGES,
@@ -22,7 +32,18 @@ import {
  * One box per workout day the challenge needs: ink with a tick once earned, outlined in blue for
  * today's slot while it's still open, empty for the rest.
  */
-export function DayBoxes({ done, total, doneToday }: { done: number; total: number; doneToday: boolean }) {
+export function DayBoxes({
+  done,
+  total,
+  doneToday,
+  earnIndex,
+}: {
+  done: number;
+  total: number;
+  doneToday: boolean;
+  /** A box to show being earned: it starts as today's open box and fills in (the Complete screen). */
+  earnIndex?: number;
+}) {
   const theme = useTheme();
   return (
     <View
@@ -34,17 +55,21 @@ export function DayBoxes({ done, total, doneToday }: { done: number; total: numb
         const today = !doneToday && i === done;
         return (
           <View key={i} style={styles.day}>
-            <View
-              style={[
-                styles.box,
-                earned
-                  ? { backgroundColor: theme.text }
-                  : today
-                    ? { borderWidth: 2, borderColor: theme.accent }
-                    : { borderWidth: 1, borderColor: theme.outline },
-              ]}>
-              {earned && <Icon name={{ ios: 'checkmark', md: 'check' }} size={16} color={theme.onText} weight="bold" />}
-            </View>
+            {i === earnIndex ? (
+              <EarningBox />
+            ) : (
+              <View
+                style={[
+                  styles.box,
+                  earned
+                    ? { backgroundColor: theme.text }
+                    : today
+                      ? { borderWidth: 2, borderColor: theme.accent }
+                      : { borderWidth: 1, borderColor: theme.outline },
+                ]}>
+                {earned && <Icon name={{ ios: 'checkmark', md: 'check' }} size={16} color={theme.onText} weight="bold" />}
+              </View>
+            )}
             <ThemedText
               type="footnote"
               themeColor={today ? 'accent' : 'textSecondary'}
@@ -55,6 +80,50 @@ export function DayBoxes({ done, total, doneToday }: { done: number; total: numb
           </View>
         );
       })}
+    </View>
+  );
+}
+
+/** When the box fills: once the Complete screen's challenge section has finished arriving. */
+const EARN_DELAY = 850;
+
+/**
+ * Today's open box (blue outline) that fills with ink and a tick, with a light tap you can feel.
+ * This only plays on the Complete screen, so it gets a small bounce.
+ */
+function EarningBox() {
+  const theme = useTheme();
+  const reduceMotion = useReducedMotion();
+  const fill = useSharedValue(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // The haptic and the fill start in the same frame.
+      feedback.dayEarned();
+      fill.set(
+        reduceMotion
+          ? withTiming(1, { duration: 150, reduceMotion: ReduceMotion.Never })
+          : withSpring(1, { duration: 400, dampingRatio: 0.7 })
+      );
+    }, EARN_DELAY);
+    return () => clearTimeout(timer);
+  }, [fill, reduceMotion]);
+
+  const fillStyle = useAnimatedStyle(() => {
+    const p = fill.get();
+    return {
+      opacity: Math.min(1, p * 2),
+      // Reduced motion keeps the cross-fade and drops the scale.
+      transform: [{ scale: reduceMotion ? 1 : 0.6 + 0.4 * p }],
+    };
+  });
+
+  return (
+    <View style={styles.box}>
+      <View style={[StyleSheet.absoluteFill, styles.boxLayer, { borderWidth: 2, borderColor: theme.accent }]} />
+      <Animated.View style={[StyleSheet.absoluteFill, styles.boxLayer, { backgroundColor: theme.text }, fillStyle]}>
+        <Icon name={{ ios: 'checkmark', md: 'check' }} size={16} color={theme.onText} weight="bold" />
+      </Animated.View>
     </View>
   );
 }
@@ -234,6 +303,11 @@ const styles = StyleSheet.create({
   box: {
     width: 36,
     height: 36,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxLayer: {
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',

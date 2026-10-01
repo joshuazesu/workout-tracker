@@ -25,6 +25,7 @@ import { formatMinutes } from '@/lib/format';
 import {
   CHALLENGES,
   challengeProgress,
+  dayKey,
   personalRecords,
   startOfWeek,
   useWorkoutStore,
@@ -43,6 +44,10 @@ export default function CompleteScreen() {
   const wonChallenge = Boolean(workout && challenge?.completedByWorkoutId === workout.id);
   const progress = challenge ? challengeProgress(challenge, history, now) : null;
   const countsTowardChallenge = progress && !progress.expired && (!challenge?.completedAt || wonChallenge);
+  // Fill today's box in front of them only if this workout is what earned it (not the second one today).
+  const earnedDay = Boolean(
+    workout && progress?.doneToday && !history.some((w) => w.id !== workout.id && dayKey(w.startedAt) === dayKey(workout.startedAt))
+  );
 
   useEffect(() => {
     if (wonChallenge) feedback.challengeDone();
@@ -146,7 +151,12 @@ export default function CompleteScreen() {
           {countsTowardChallenge && progress && (
             <Animated.View entering={FadeInDown.delay(500).duration(300)}>
               <Section title={progress.title} padded>
-                <DayBoxes done={progress.done} total={progress.days} doneToday />
+                <DayBoxes
+                  done={progress.done}
+                  total={progress.days}
+                  doneToday
+                  earnIndex={earnedDay ? progress.done - 1 : undefined}
+                />
                 <ThemedText type="subheadline" themeColor="textSecondary" numeric>
                   {progress.complete
                     ? `${progress.days} of ${progress.days} days. Done!`

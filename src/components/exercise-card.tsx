@@ -1,17 +1,21 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
+  FadeIn,
+  FadeOut,
+  Keyframe,
+  LinearTransition,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT } from '@/constants/motion';
 import { Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
@@ -35,6 +39,18 @@ function suggestFor(sets: WorkoutSet[], index: number, previous?: WorkoutSet) {
     reps: earlier.find((s) => s.reps)?.reps ?? previous?.reps ?? '',
   };
 }
+
+// Rows fade in and out quickly, and the rows below glide instead of jumping. Layout animations
+// follow the system Reduce Motion setting on their own.
+export const rowLayout = LinearTransition.duration(200).easing(EASE_OUT);
+const rowEntering = FadeIn.duration(150);
+const rowExiting = FadeOut.duration(120);
+
+// The tick grows in from 0.6, never from nothing.
+const checkEntering = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.6 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }], easing: EASE_OUT },
+}).duration(160);
 
 export const ExerciseCard = memo(function ExerciseCard({
   exercise,
@@ -83,28 +99,31 @@ export const ExerciseCard = memo(function ExerciseCard({
       </View>
 
       {exercise.sets.map((set, index) => (
-        <SetRow
-          key={set.id}
-          exerciseId={exercise.id}
-          set={set}
-          index={index}
-          previous={previous?.[index]}
-          suggestion={suggestFor(exercise.sets, index, previous?.[index])}
-        />
+        <Animated.View key={set.id} entering={rowEntering} exiting={rowExiting} layout={rowLayout}>
+          <SetRow
+            exerciseId={exercise.id}
+            set={set}
+            index={index}
+            previous={previous?.[index]}
+            suggestion={suggestFor(exercise.sets, index, previous?.[index])}
+          />
+        </Animated.View>
       ))}
 
-      <Pressable
-        onPress={() => {
-          feedback.tap();
-          workoutActions.addSet(exercise.id);
-        }}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.addSet, { opacity: pressed ? 0.6 : 1 }]}>
-        <Icon name={{ ios: 'plus', md: 'add' }} size={15} color={theme.accent} weight="semibold" />
-        <ThemedText type="callout" style={{ color: theme.accent, fontWeight: 600 }}>
-          Add set
-        </ThemedText>
-      </Pressable>
+      <Animated.View layout={rowLayout}>
+        <Pressable
+          onPress={() => {
+            feedback.tap();
+            workoutActions.addSet(exercise.id);
+          }}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.addSet, { opacity: pressed ? 0.6 : 1 }]}>
+          <Icon name={{ ios: 'plus', md: 'add' }} size={15} color={theme.accent} weight="semibold" />
+          <ThemedText type="callout" style={{ color: theme.accent, fontWeight: 600 }}>
+            Add set
+          </ThemedText>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 });
@@ -132,7 +151,16 @@ function SetRow({
 
   const reduceMotion = useReducedMotion();
   const pop = useSharedValue(1);
-  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
+  const shake = useSharedValue(0);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.get() }, { scale: pop.get() }] }));
+
+  // The box gives on touch-down and comes back on release; the tick itself is decided on press.
+  const pressIn = () => {
+    if (!reduceMotion) pop.set(withTiming(0.94, { duration: 100, easing: EASE_OUT }));
+  };
+  const pressOut = () => {
+    if (!reduceMotion) pop.set(withTiming(1, { duration: 150, easing: EASE_OUT }));
+  };
 
   const toggleDone = () => {
     // Ticking an empty field accepts the suggestion shown in it.
@@ -141,8 +169,16 @@ function SetRow({
     if (!set.done && !(Number(reps) > 0)) {
       feedback.error();
       if (!reduceMotion) {
-        // A quick shake says "add reps first" without a dialog.
-        pop.set(withSequence(withTiming(0.85, { duration: 60 }), withSpring(1, { damping: 4 })));
+        // A quick sideways shake says "add reps first" without a dialog.
+        shake.set(
+          withSequence(
+            withTiming(-5, { duration: 40 }),
+            withTiming(5, { duration: 40 }),
+            withTiming(-3, { duration: 40 }),
+            withTiming(3, { duration: 40 }),
+            withTiming(0, { duration: 40 })
+          )
+        );
       }
       return;
     }
@@ -150,7 +186,15 @@ function SetRow({
       feedback.tap();
     } else {
       feedback.setDone();
-      if (!reduceMotion) pop.set(withSequence(withTiming(1.2, { duration: 90 }), withSpring(1, { damping: 8 })));
+      // One small swell in the same frame as the chime, no wobble: this happens 20 times a workout.
+      if (!reduceMotion) {
+        pop.set(
+          withSequence(
+            withTiming(1.08, { duration: 100, easing: EASE_OUT }),
+            withTiming(1, { duration: 160, easing: EASE_OUT })
+          )
+        );
+      }
     }
     workoutActions.updateSet(exerciseId, set.id, set.done ? { done: false } : { done: true, weight, reps });
     if (!set.done) workoutActions.startRest();
@@ -212,6 +256,8 @@ function SetRow({
         />
         <Pressable
           onPress={toggleDone}
+          onPressIn={pressIn}
+          onPressOut={pressOut}
           hitSlop={6}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: set.done }}
@@ -225,7 +271,11 @@ function SetRow({
                 : { backgroundColor: 'transparent', borderColor: theme.text },
               popStyle,
             ]}>
-            {set.done && <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onText} weight="bold" />}
+            {set.done && (
+              <Animated.View entering={checkEntering}>
+                <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.onText} weight="bold" />
+              </Animated.View>
+            )}
           </Animated.View>
         </Pressable>
       </View>

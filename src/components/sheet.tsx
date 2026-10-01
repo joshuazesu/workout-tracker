@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_SHEET } from '@/constants/motion';
 import { MaxContentWidth, Radius, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type MenuOption = { label: string; onPress: () => void; destructive?: boolean };
 
-/** Bottom action sheet. Built on RN Modal so it behaves the same on iOS, Android and web. */
+/**
+ * Bottom action sheet. Built on RN Modal so it behaves the same on iOS, Android and web. It slides
+ * up from the bottom edge and leaves the same way, while the scrim fades.
+ */
 export function ActionMenu({
   title,
   options,
@@ -21,25 +29,62 @@ export function ActionMenu({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+  // What's on screen lags `options` by the slide-out, so the sheet keeps its content while it leaves.
+  const [shown, setShown] = useState(options);
+  const [shownTitle, setShownTitle] = useState(title);
+  if (options && (options !== shown || title !== shownTitle)) {
+    setShown(options);
+    setShownTitle(title);
+  }
+
+  // 0 = off screen, 1 = up. Reduce Motion keeps the timing but swaps the slide for a fade. The sheet's height is measured; until then it sits well below the screen.
+  const progress = useSharedValue(0);
+  const height = useSharedValue(1000);
+  const open = options !== null;
+  useEffect(() => {
+    if (open) {
+      progress.set(withTiming(1, { duration: 300, easing: EASE_SHEET, reduceMotion: ReduceMotion.Never }));
+    } else {
+      // Leaves the way it came, a little quicker, then the modal goes.
+      progress.set(
+        withTiming(0, { duration: 200, easing: EASE_SHEET, reduceMotion: ReduceMotion.Never }, (finished) => {
+          if (finished) scheduleOnRN(setShown, null);
+        })
+      );
+    }
+  }, [open, progress]);
+
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.get() }));
+  const sheetStyle = useAnimatedStyle(() =>
+    reduceMotion
+      ? { opacity: progress.get() }
+      : { transform: [{ translateY: (1 - progress.get()) * height.get() }] }
+  );
+
   return (
-    <Modal visible={options !== null} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        {/* Sibling, not parent, of the sheet so taps on the sheet's padding don't dismiss it. */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.two }]}>
+    <Modal visible={shown !== null} transparent animationType="none" onRequestClose={onClose}>
+      <View style={styles.sheetContainer} pointerEvents={open ? 'auto' : 'none'}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, backdropStyle]}>
+          {/* Sibling, not parent, of the sheet so taps on the sheet's padding don't dismiss it. */}
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" />
+        </Animated.View>
+        <Animated.View
+          onLayout={(e) => height.set(e.nativeEvent.layout.height + insets.bottom)}
+          style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.two }, sheetStyle]}>
           <View style={[styles.group, { backgroundColor: theme.surface }]}>
-            {title && (
+            {shownTitle && (
               <ThemedText type="footnote" themeColor="textSecondary" style={styles.title}>
-                {title}
+                {shownTitle}
               </ThemedText>
             )}
-            {options?.map((o, i) => (
+            {shown?.map((o, i) => (
               <View key={o.label}>
-                {(i > 0 || title) && <View style={[styles.divider, { backgroundColor: theme.separator }]} />}
+                {(i > 0 || shownTitle) && <View style={[styles.divider, { backgroundColor: theme.separator }]} />}
                 <Pressable
                   onPress={() => {
                     onClose();
-                    // iOS can't present a screen or alert while this modal is still fading out.
+                    // iOS can't present a screen or alert while this modal is still sliding out.
                     setTimeout(o.onPress, 300);
                   }}
                   accessibilityRole="button"
@@ -63,7 +108,7 @@ export function ActionMenu({
               Cancel
             </ThemedText>
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -198,6 +243,13 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  scrim: {
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   center: {

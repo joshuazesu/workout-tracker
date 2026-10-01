@@ -56,6 +56,10 @@ export const feedback = {
     play('set');
     if (native) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
+  /** A challenge day box filling in on the Complete screen. Touch only: the finish chime is still ringing. */
+  dayEarned() {
+    if (native) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  },
   /** Rest is over: a chime and a double buzz you can feel with the phone in a pocket. */
   restDone() {
     play('set');
