@@ -88,9 +88,12 @@ export function CompactTitle({ title, collapse }: { title: string; collapse: Col
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const barBottom = WEB_TABS + insets.top + BAR_HEIGHT;
+  // Only the shared values go into the worklet: capturing `collapse` would also try to copy its
+  // scroll handler to the UI thread, which can't be copied and crashes on native.
+  const { scrollY, titleBottom } = collapse;
 
   const style = useAnimatedStyle(() => {
-    const hidden = collapse.scrollY.get() < collapse.titleBottom.get() - barBottom;
+    const hidden = scrollY.get() < titleBottom.get() - barBottom;
     return { opacity: withTiming(hidden ? 0 : 1, { duration: 150, easing: EASE_OUT }) };
   });
 
