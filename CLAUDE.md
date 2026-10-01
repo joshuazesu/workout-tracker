@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Pending (added 2026-10-01):** At the start of the next session, remind the user that this file has grown long and offer to trim detail that's easy to find in the code. Remove this note once that's done or the user declines.
+
 General Expo rules (check versioned docs before touching Expo APIs, use `npx expo install`, Expo Go limitations, EAS) live in AGENTS.md:
 
 @AGENTS.md
