@@ -75,7 +75,7 @@ export type Profile = {
 /** One body-weight reading per local day; `day` is that day's `startOfDay` timestamp. */
 export type WeightEntry = { day: number; kg: number };
 
-type State = {
+export type State = {
   onboarded: boolean;
   profile: Profile;
   /** Body-weight log, oldest first. The newest entry is mirrored into `profile.weightKg`. */
@@ -179,16 +179,38 @@ function load(): State {
 // A tiny global store so every screen sees the same workout state.
 let state: State = load();
 const listeners = new Set<() => void>();
+/** Told about every local change, so the sync layer can queue it for upload. */
+const changeListeners = new Set<(prev: State, next: State) => void>();
 
-function setState(update: (prev: State) => State) {
+function setState(update: (prev: State) => State, fromRemote = false) {
+  const prev = state;
   state = update(state);
+  if (state === prev) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Non-fatal: state still lives in memory.
   }
+  if (!fromRemote) changeListeners.forEach((l) => l(prev, state));
   listeners.forEach((l) => l());
 }
+
+/** Hooks for `src/lib/sync.ts`. Screens use `useWorkoutStore` and the actions instead. */
+export const storeSync = {
+  getState: () => state,
+  onChange(listener: (prev: State, next: State) => void) {
+    changeListeners.add(listener);
+    return () => changeListeners.delete(listener);
+  },
+  /** Applies data pulled from the server without queueing it to be pushed back. */
+  applyRemote(update: (prev: State) => State) {
+    setState(update, true);
+  },
+  /** Back to a fresh install, for signing out. */
+  reset() {
+    setState(() => initialState(), true);
+  },
+};
 
 function subscribe(listener: () => void) {
   listeners.add(listener);

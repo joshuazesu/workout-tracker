@@ -25,6 +25,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderOptions } from '@/hooks/use-header-options';
 import { preloadSounds } from '@/lib/feedback';
 import { syncReminders } from '@/lib/reminders';
+import { useAccount } from '@/lib/sync';
 import { useWorkoutStore } from '@/lib/workouts';
 
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,8 @@ preloadSounds();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { onboarded, history, challenge, appearance } = useWorkoutStore();
+  // Set once the account's data is on this phone; it stays set offline.
+  const signedIn = Boolean(useAccount().userId);
   const dark = colorScheme === 'dark';
   const colors = Colors[dark ? 'dark' : 'light'];
   const headerOptions = useHeaderOptions();
@@ -85,10 +88,13 @@ export default function RootLayout() {
           screenOptions={({ route }) =>
             route.name === '(tabs)' ? { ...headerOptions, headerShown: false, title: '' } : headerOptions
           }>
-          <Stack.Protected guard={!onboarded}>
+          <Stack.Protected guard={!signedIn}>
+            <Stack.Screen name="sign-in" options={{ headerShown: false, animation: 'fade' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={signedIn && !onboarded}>
             <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           </Stack.Protected>
-          <Stack.Protected guard={onboarded}>
+          <Stack.Protected guard={signedIn && onboarded}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '' }} />
             <Stack.Screen name="workout" options={{ title: 'Workout', headerBackTitle: 'Back' }} />
             <Stack.Screen

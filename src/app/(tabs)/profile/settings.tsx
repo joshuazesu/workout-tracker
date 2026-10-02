@@ -11,6 +11,7 @@ import { Gutter, MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
+import { accountActions, type Account, useAccount } from '@/lib/sync';
 import { fromDisplayWeight, fromFeetInches, toDisplayWeight, toFeetInches, weightUnit } from '@/lib/units';
 import {
   type Appearance,
@@ -58,6 +59,7 @@ async function persistPhoto(uri: string, previous?: string): Promise<string> {
 export default function SettingsScreen() {
   const theme = useTheme();
   const { profile, history, appearance, units, weightColors, weights } = useWorkoutStore();
+  const account = useAccount();
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -151,9 +153,27 @@ export default function SettingsScreen() {
         ))}
       </Section>
 
+      <Section title="Account" footer={syncStatus(account)}>
+        <Row label={account.email ?? 'Signed in'} detail="Signed in with email" />
+        <Row
+          label="Sign out"
+          color={theme.accent}
+          onPress={() =>
+            confirm(
+              'Sign out?',
+              account.pending > 0
+                ? `${account.pending} ${account.pending === 1 ? 'change hasn’t' : 'changes haven’t'} reached your account yet and will be lost. Connect to the internet first to keep ${account.pending === 1 ? 'it' : 'them'}.`
+                : 'Your workouts stay in your account. This phone is cleared until you sign in again.',
+              'Sign Out',
+              () => void accountActions.signOut()
+            )
+          }
+        />
+      </Section>
+
       <Section
         title="Data"
-        footer="Start fresh. Deletes every workout, challenge, trophy and weight reading. This can’t be undone.">
+        footer="Start fresh. Deletes every workout, challenge, trophy and weight reading from this phone and your account. This can’t be undone.">
         <Row
           label="Reset tracking history"
           color={theme.destructive}
@@ -172,6 +192,12 @@ export default function SettingsScreen() {
       </Section>
     </ScrollView>
   );
+}
+
+function syncStatus({ pending, syncing, failed }: Account): string {
+  if (pending === 0) return syncing ? 'Checking for changes…' : 'Everything is backed up to your account.';
+  const changes = `${pending} ${pending === 1 ? 'change' : 'changes'}`;
+  return failed ? `${changes} waiting to upload. They’ll go up when you’re back online.` : `Uploading ${changes}…`;
 }
 
 /** Centimetres, or feet and inches. Always saved as cm. */

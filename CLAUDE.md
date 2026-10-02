@@ -35,6 +35,11 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 
 **Persistence** uses `localStorage`. `src/lib/storage.ts` imports `expo-sqlite/localStorage/install` to provide a synchronous one on native; `storage.web.ts` is empty because importing expo-sqlite on web breaks the web bundle. The key is versioned (`workouts.v2`). `load()` fills missing fields from `initialState()`, so adding a field with a default needs no bump; changing the shape of an existing field does (or a migration). The profile photo is copied into `Paths.document` because image-picker URIs live in a purgeable cache.
 
+**Accounts and sync** (`src/lib/sync.ts`, schema in `supabase/migrations/`): sign-in is required, by emailed code (`signInWithOtp` + `verifyOtp`; no deep links, so it works in Expo Go). The local store stays the source of truth for the UI. Every `setState` passes `(prev, next)` to `storeSync.onChange`, which diffs them by reference (updates are immutable) into pending keys (`profile`, `workout:<id>`, `routine:<id>`, `weight:<day>`), pushed 1.5 s later. Each sync pushes, then pulls rows with `updated_at` newer than the cursor (minus a minute) and applies them with `storeSync.applyRemote`, which doesn't re-queue them. A pull never overwrites a record with unpushed edits. Deletes are `deleted_at` tombstones. The in-progress workout, template draft and profile photo are not synced.
+- The app unlocks on `meta.userId` (local, so it opens offline), not on the Supabase session. `meta.owner` is whose data is on the phone: the first sign-in uploads everything to a new account, or for an existing account takes its templates, settings and profile and adds this phone's workouts and weights. Signing out clears the phone.
+- A new field in `State` that should sync needs a column, a line in `profileRow`/`applyChanges` (or its own table), and a check in `changedKeys`.
+- Supabase config comes from `.env.local` (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; see `.env.example`). New tables need explicit `grant`s and RLS policies; Supabase no longer exposes them automatically.
+
 **Invariants worth knowing:**
 - Body height and weight are always stored in cm and kg; `state.units` only changes display and entry (`src/lib/units.ts`). Pounds are saved as kg to two decimals so they read back exactly. Set weights are kg only.
 - Set `weight`/`reps` are strings (friendly to text inputs), converted to numbers only in calculations.
@@ -54,7 +59,7 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 - To add a catalogue exercise, add an entry in `src/constants/exercises.ts` with a static `require` for both images in `assets/exercises/`.
 
 **Routing:**
-- The root `src/app/_layout.tsx` is a native `Stack`. `onboarding` is behind `Stack.Protected guard={!onboarded}` and everything else behind `guard={onboarded}`, so `completeOnboarding()` routes into the tabs on its own.
+- The root `src/app/_layout.tsx` is a native `Stack` with three `Stack.Protected` groups: `sign-in` (signed out), `onboarding` (signed in, not onboarded) and everything else, so signing in and `completeOnboarding()` route on their own.
 - Tabs use `NativeTabs` from `expo-router/unstable-native-tabs`; each tab folder has its own `Stack`. `/` resolves to `(tabs)/(start)/index`. Tab roots have no native header (hidden for `(tabs)` in both `screenOptions` and the screen, so "(tabs)" never shows); they draw `ScreenHeader` instead.
 - The user explicitly chose the current tab layout. Still prefer adding to an existing screen over adding a new one.
 - Per-screen header buttons are set with `<Stack.Screen options={...}>` inside the screen. Pushed screens and modals use `useHeaderOptions()`.
