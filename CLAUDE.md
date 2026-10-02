@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Pending (added 2026-10-02):** At the start of the next session, remind the user where they left off. Supabase accounts and sync are live and tested on their phone (email-code sign-in via Resend SMTP, first upload, sync within ~2 s, offline queue). Still to do: (1) account deletion in Settings (required by the App Store; rows cascade on user delete), (2) a `pg_cron` job that permanently purges rows with `deleted_at` older than 30 days, (3) separate dev and production Supabase projects, (4) untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds. Remove this note once these are addressed or the user declines.
+
 General Expo rules (check versioned docs before touching Expo APIs, use `npx expo install`, Expo Go limitations, EAS) live in AGENTS.md:
 
 @AGENTS.md
