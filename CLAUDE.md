@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Pending (updated 2026-10-03):** At the start of the next session, remind the user where they left off. Done: Supabase accounts and sync (tested on the phone), account deletion, a daily `pg_cron` purge of 30-day-old tombstones, and separate dev (`workout-app-dev`) and production (`workout-app`) projects. Dev sign-in is tested on the phone (dev has its own Resend key). Still to do: untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds (set the production env vars in EAS). Remove this note once these are addressed or the user declines.
+> **Pending (updated 2026-10-03):** At the start of the next session, remind the user where they left off. Done: Supabase accounts and sync (tested on the phone), account deletion, a daily `pg_cron` purge of 30-day-old tombstones, and separate dev (`workout-app-dev`) and production (`workout-app`) projects. Dev sign-in is tested on the phone (dev has its own Resend key). Still to do: untested: sync between two devices; on the phone, check template reorder (press and hold) still works alongside tab swiping. Branding: welcome concept C (rolling log) is in the app; D (woodpile) and E1 (title crushes the logs) stay shortlisted on the design canvas. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds (set the production env vars in EAS). Remove this note once these are addressed or the user declines.
 
 General Expo rules (check versioned docs before touching Expo APIs, use `npx expo install`, Expo Go limitations, EAS) live in AGENTS.md:
 
@@ -10,7 +10,9 @@ General Expo rules (check versioned docs before touching Expo APIs, use `npx exp
 
 ## Project
 
-A simple Hevy-style workout tracker built with Expo SDK 57, React Native 0.86, React 19, TypeScript and Expo Router. It is developed and demoed on a physical phone via Expo Go, so new dependencies must be ones bundled in Expo Go unless the project moves to a development build. There is no Xcode or Android Studio on this machine.
+**LogMyLift**, a simple Hevy-style workout tracker built with Expo SDK 57, React Native 0.86, React 19, TypeScript and Expo Router. It is developed and demoed on a physical phone via Expo Go, so new dependencies must be ones bundled in Expo Go unless the project moves to a development build. There is no Xcode or Android Studio on this machine.
+
+Brand: the log is the currency. The app is "your Logbook" (capital L in copy, e.g. the sign-in title "Sign in to your Logbook"), and the mark is a wooden log on the heavy ink rule (see the welcome lockup under Styling).
 
 ## Commands
 
@@ -104,4 +106,4 @@ The full design system is in `DESIGN.md` and product context in `PRODUCT.md`; re
 - Haptics calls are skipped on web.
 - Files ending in `.web.tsx`/`.web.ts` are web-specific overrides.
 - `TextInput`s inside flex rows need `minWidth: 0` or they overflow on web.
-- Icons: use `Icon` (`components/icon.tsx`) with `{ ios: '<SF Symbol>', md: '<material_symbol>' }`. No emoji or text glyphs (✓ ✕ ‹ ›) as icons. Tab icons use the `sf`/`md` props.
+- Icons: use `Icon` (`components/icon.tsx`) with `{ ios: '<SF Symbol>', md: '<material_symbol>' }`. No emoji or text glyphs (✓ ✕ ‹ ›) as icons. Tab icons live in `TABS` (`components/pager-tabs.tsx`), each with an outline and a filled (selected) variant.
