@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
+import { WELCOME_SETTLED_MS, WelcomeMark } from '@/components/welcome-mark';
 import { MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -92,11 +93,14 @@ export default function SignInScreen() {
         style={styles.flex}>
         <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
           <Animated.View exiting={FadeOut.duration(150)} style={[styles.body, styles.welcome]}>
-            <ThemedText type="display">LogMyLift</ThemedText>
+            <WelcomeMark />
           </Animated.View>
-          <ThemedText type="subheadline" themeColor="textSecondary" style={styles.hint}>
-            Tap to continue
-          </ThemedText>
+          {/* Only once the log has stopped and the name is in. */}
+          <Animated.View entering={FadeIn.delay(WELCOME_SETTLED_MS).duration(250)}>
+            <ThemedText type="subheadline" themeColor="textSecondary" style={styles.hint}>
+              Tap to continue
+            </ThemedText>
+          </Animated.View>
         </SafeAreaView>
       </Pressable>
     );

@@ -40,6 +40,12 @@ export const Colors = {
     /** Body weight going down (the profile weight delta); going up uses `destructive`. */
     positive: '#1A7F37',
     avatar: '#7D8592',
+    /** The LogMyLift log (welcome screen): bark, cut end, growth rings, the crack, and its outline. */
+    bark: '#6B4226',
+    wood: '#E2B47A',
+    woodRing: '#A8743F',
+    woodPith: '#7A4B22',
+    woodOutline: '#0E1116',
   },
   dark: {
     text: '#F1F3F6',
@@ -61,6 +67,12 @@ export const Colors = {
     destructive: '#FF453A',
     positive: '#3FB950',
     avatar: '#5C6673',
+    bark: '#7A4C2C',
+    wood: '#D9A86C',
+    woodRing: '#9C6B3A',
+    woodPith: '#6E431F',
+    // Near-black brown: no visible outline against the dark page.
+    woodOutline: '#1A0F06',
   },
 } as const;
 
