@@ -31,7 +31,7 @@ const cardEntering = FadeInDown.duration(220)
   .delay(CARD_DELAY)
   .easing(EASE_OUT)
   .withInitialValues({ opacity: 0, transform: [{ translateY: 8 }] });
-const cardExiting = FadeOut.duration(150);
+const cardExiting = FadeOut.duration(150).easing(EASE_OUT);
 
 export default function WorkoutScreen() {
   const theme = useTheme();

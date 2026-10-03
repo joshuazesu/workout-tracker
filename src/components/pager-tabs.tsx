@@ -15,6 +15,7 @@ import Animated, {
   useDerivedValue,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -85,13 +86,18 @@ function PagerContent({ state, descriptors, actions }: NavigatorContentProps<obj
 
   const offset = useSharedValue(-index * width);
   const start = useSharedValue(0);
+  /** Where the pages are headed, so a swipe's own settle isn't restarted when the tab changes. */
+  const goal = useSharedValue(-index * width);
   /** Which page is showing, fractional mid-swipe: 0 is the first tab. Drives the bar. */
   const progress = useDerivedValue(() => -offset.get() / width);
 
   // A tap on the bar (or a navigate from code) slides to the page.
   useEffect(() => {
-    offset.set(reduceMotion ? -index * width : withTiming(-index * width, { duration: SETTLE_MS, easing: EASE_OUT }));
-  }, [index, width, reduceMotion, offset]);
+    const to = -index * width;
+    if (goal.get() === to) return;
+    goal.set(to);
+    offset.set(reduceMotion ? to : withTiming(to, { duration: SETTLE_MS, easing: EASE_OUT }));
+  }, [index, width, reduceMotion, offset, goal]);
 
   const pan = useMemo(
     () =>
@@ -112,10 +118,12 @@ function PagerContent({ state, descriptors, actions }: NavigatorContentProps<obj
           const projected = offset.get() + e.velocityX * FLING;
           // One page per swipe, like iOS paging.
           const target = Math.max(0, Math.min(count - 1, Math.max(index - 1, Math.min(index + 1, Math.round(-projected / width)))));
-          offset.set(withTiming(-target * width, { duration: SETTLE_MS, easing: EASE_OUT }));
+          // Settle carrying the finger's speed, with no bounce.
+          goal.set(-target * width);
+          offset.set(withSpring(-target * width, { duration: SETTLE_MS, dampingRatio: 1, velocity: e.velocityX }));
           if (target !== index) scheduleOnRN(actions.navigate, state.routes[target].name);
         }),
-    [count, width, index, start, offset, actions.navigate, state.routes]
+    [count, width, index, start, offset, goal, actions.navigate, state.routes]
   );
 
   const pages = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));

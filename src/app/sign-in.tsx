@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { WelcomeScreen } from '@/components/welcome-screen';
+import { EASE_OUT } from '@/constants/motion';
 import { MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -174,7 +175,7 @@ export default function SignInScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Animated.View key={step} entering={FadeInDown.duration(250)} exiting={FadeOut.duration(150)} style={styles.body}>
+        <Animated.View key={step} entering={FadeInDown.duration(250).easing(EASE_OUT)} exiting={FadeOut.duration(150).easing(EASE_OUT)} style={styles.body}>
           <Icon name={content.icon} size={56} color={theme.accent} />
           <ThemedText type="largeTitle">{content.title}</ThemedText>
           <ThemedText type="body" themeColor="textSecondary">

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -96,10 +97,16 @@ export function CompactTitle({ title, collapse }: { title: string; collapse: Col
   // scroll handler to the UI thread, which can't be copied and crashes on native.
   const { scrollY, titleBottom } = collapse;
 
-  const style = useAnimatedStyle(() => {
-    const hidden = scrollY.get() < titleBottom.get() - barBottom;
-    return { opacity: withTiming(hidden ? 0 : 1, { duration: 150, easing: EASE_OUT }) };
-  });
+  // Fades only when the title crosses under the bar, not on every scroll frame.
+  const opacity = useSharedValue(0);
+  useAnimatedReaction(
+    () => scrollY.get() >= titleBottom.get() - barBottom,
+    (shown, wasShown) => {
+      if (wasShown === null) opacity.set(shown ? 1 : 0);
+      else if (shown !== wasShown) opacity.set(withTiming(shown ? 1 : 0, { duration: 150, easing: EASE_OUT }));
+    }
+  );
+  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
     <Animated.View

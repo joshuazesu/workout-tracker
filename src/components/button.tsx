@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT_CSS } from '@/constants/motion';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -33,6 +35,7 @@ export function Button({
   accessibilityLabel,
 }: Props) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
   const background =
     variant === 'primary' ? theme.accentFill : 'transparent';
   const color =
@@ -51,23 +54,32 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
-      style={({ pressed }) => [
-        size === 'large' ? styles.large : styles.small,
-        {
-          backgroundColor: background,
-          borderWidth: variant === 'tinted' ? 1.5 : 0,
-          borderColor: theme.text,
-          opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-        },
-        style,
-      ]}>
-      <View style={styles.content}>
-        {icon && <Icon name={icon} size={size === 'large' ? 18 : 14} color={color} weight="semibold" />}
-        <ThemedText type={size === 'large' ? 'headline' : 'subheadline'} style={[styles.label, { color }]}>
-          {label}
-        </ThemedText>
-      </View>
+      style={style}>
+      {({ pressed }) => (
+        // The pill gives on touch-down and comes back a little slower on release.
+        <Animated.View
+          style={[
+            size === 'large' ? styles.large : styles.small,
+            {
+              backgroundColor: background,
+              borderWidth: variant === 'tinted' ? 1.5 : 0,
+              borderColor: theme.text,
+              opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
+              // Reduce Motion keeps the dim and drops the scale.
+              transform: [{ scale: pressed && !reduceMotion ? 0.97 : 1 }],
+              transitionProperty: ['transform', 'opacity'],
+              transitionDuration: pressed ? 100 : 150,
+              transitionTimingFunction: EASE_OUT_CSS,
+            },
+          ]}>
+          <View style={styles.content}>
+            {icon && <Icon name={icon} size={size === 'large' ? 18 : 14} color={color} weight="semibold" />}
+            <ThemedText type={size === 'large' ? 'headline' : 'subheadline'} style={[styles.label, { color }]}>
+              {label}
+            </ThemedText>
+          </View>
+        </Animated.View>
+      )}
     </Pressable>
   );
 }

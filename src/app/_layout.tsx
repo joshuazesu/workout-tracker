@@ -22,6 +22,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { WelcomeScreen } from '@/components/welcome-screen';
+import { EASE_OUT } from '@/constants/motion';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderOptions } from '@/hooks/use-header-options';
 import { useTheme } from '@/hooks/use-theme';
@@ -117,7 +118,7 @@ export default function RootLayout() {
           </Stack.Protected>
         </Stack>
         {welcome && (
-          <Animated.View exiting={FadeOut.duration(250)} style={styles.welcome}>
+          <Animated.View exiting={FadeOut.duration(250).easing(EASE_OUT)} style={styles.welcome}>
             <WelcomeScreen onContinue={() => setWelcome(false)} />
           </Animated.View>
         )}

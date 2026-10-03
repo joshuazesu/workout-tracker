@@ -17,6 +17,7 @@ import { Icon } from '@/components/icon';
 import { Row, Section, Separator } from '@/components/list';
 import { Stat } from '@/components/stat';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT } from '@/constants/motion';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -75,7 +76,7 @@ export default function CompleteScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <Badge trophy={wonChallenge} />
 
-          <Animated.View entering={FadeInDown.delay(200).duration(300)} style={styles.center}>
+          <Animated.View entering={FadeInDown.delay(200).duration(300).easing(EASE_OUT)} style={styles.center}>
             <ThemedText type="display" style={styles.centerText}>
               {wonChallenge ? 'Challenge complete' : 'Workout complete'}
             </ThemedText>
@@ -88,7 +89,7 @@ export default function CompleteScreen() {
             </ThemedText>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(300).duration(300)}>
+          <Animated.View entering={FadeInDown.delay(300).duration(300).easing(EASE_OUT)}>
             <Section padded>
               <View style={styles.stats}>
                 <Stat
@@ -125,7 +126,7 @@ export default function CompleteScreen() {
           </Animated.View>
 
           {records.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(400).duration(300)}>
+            <Animated.View entering={FadeInDown.delay(400).duration(300).easing(EASE_OUT)}>
               <Section title="Personal records">
                 {records.map((r) => (
                   <Row
@@ -150,7 +151,7 @@ export default function CompleteScreen() {
           )}
 
           {countsTowardChallenge && progress && (
-            <Animated.View entering={FadeInDown.delay(500).duration(300)}>
+            <Animated.View entering={FadeInDown.delay(500).duration(300).easing(EASE_OUT)}>
               <Section title={progress.title} padded>
                 <DayBoxes
                   done={progress.done}

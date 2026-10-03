@@ -4,6 +4,7 @@ import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT } from '@/constants/motion';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -41,8 +42,8 @@ export function RestTimer() {
 
   return (
     <Animated.View
-      entering={reduceMotion ? undefined : FadeInDown.duration(200)}
-      exiting={reduceMotion ? undefined : FadeOutDown.duration(150)}
+      entering={reduceMotion ? undefined : FadeInDown.duration(200).easing(EASE_OUT)}
+      exiting={reduceMotion ? undefined : FadeOutDown.duration(150).easing(EASE_OUT)}
       accessibilityLiveRegion="polite"
       style={[styles.bar, { backgroundColor: theme.accentFill, paddingBottom: insets.bottom + Spacing.three }]}>
       <View style={styles.row}>

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
@@ -11,6 +11,7 @@ import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
 import { SortableList } from '@/components/sortable-list';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
+import { EASE_OUT_CSS } from '@/constants/motion';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -202,6 +203,7 @@ function TemplateRow({
   onDelete: () => void;
 }) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
   const exercises = routine.exercises.length;
   return (
     <View
@@ -228,17 +230,26 @@ function TemplateRow({
         <Pressable
           onPress={onStart}
           accessibilityRole="button"
-          accessibilityLabel={`Start ${routine.name}`}
-          style={({ pressed }) => [
-            styles.play,
-            { backgroundColor: theme.accentFill },
-            { transform: [{ scale: pressed ? 0.94 : 1 }] },
-          ]}>
-          <Icon
-            name={{ ios: 'play.fill', md: 'play_arrow' }}
-            size={20}
-            color={theme.onAccent}
-          />
+          accessibilityLabel={`Start ${routine.name}`}>
+          {({ pressed }) => (
+            <Animated.View
+              style={[
+                styles.play,
+                {
+                  backgroundColor: theme.accentFill,
+                  transform: [{ scale: pressed && !reduceMotion ? 0.94 : 1 }],
+                  transitionProperty: 'transform',
+                  transitionDuration: pressed ? 100 : 150,
+                  transitionTimingFunction: EASE_OUT_CSS,
+                },
+              ]}>
+              <Icon
+                name={{ ios: 'play.fill', md: 'play_arrow' }}
+                size={20}
+                color={theme.onAccent}
+              />
+            </Animated.View>
+          )}
         </Pressable>
       )}
     </View>

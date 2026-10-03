@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { WELCOME_SETTLED_MS, WelcomeMark } from '@/components/welcome-mark';
+import { EASE_OUT } from '@/constants/motion';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -48,11 +49,11 @@ export function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
       accessibilityLabel="LogMyLift. Tap to continue"
       style={styles.flex}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
-        <Animated.View exiting={FadeOut.duration(150)} style={styles.body}>
+        <Animated.View exiting={FadeOut.duration(150).easing(EASE_OUT)} style={styles.body}>
           <WelcomeMark settled={settled} />
         </Animated.View>
         {/* Only once the log has stopped and the name is in. */}
-        <Animated.View entering={FadeIn.delay(WELCOME_SETTLED_MS).duration(250)}>
+        <Animated.View entering={FadeIn.delay(WELCOME_SETTLED_MS).duration(250).easing(EASE_OUT)}>
           <ThemedText type="subheadline" themeColor="textSecondary" style={styles.hint}>
             Tap to continue
           </ThemedText>

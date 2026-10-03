@@ -43,8 +43,8 @@ function suggestFor(sets: WorkoutSet[], index: number, previous?: WorkoutSet) {
 // Rows fade in and out quickly, and the rows below glide instead of jumping. Layout animations
 // follow the system Reduce Motion setting on their own.
 export const rowLayout = LinearTransition.duration(200).easing(EASE_OUT);
-const rowEntering = FadeIn.duration(150);
-const rowExiting = FadeOut.duration(120);
+const rowEntering = FadeIn.duration(150).easing(EASE_OUT);
+const rowExiting = FadeOut.duration(120).easing(EASE_OUT);
 
 // The tick grows in from 0.6, never from nothing.
 const checkEntering = new Keyframe({
