@@ -6,7 +6,7 @@ export default function StartLayout() {
   // Tab roots draw their own ledger header (date line, condensed title, heavy rule).
   return (
     <Stack screenOptions={useHeaderOptions()}>
-      <Stack.Screen name="index" options={{ title: 'Start Workout', headerShown: false }} />
+      <Stack.Screen name="index" options={{ title: 'Workout', headerShown: false }} />
     </Stack>
   );
 }

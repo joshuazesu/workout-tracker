@@ -1,6 +1,6 @@
 import { PagerTabs } from '@/components/pager-tabs';
 
-// Order is left to right; swipe between them or tap the bar. The app opens on Start Workout because
+// Order is left to right; swipe between them or tap the bar. The app opens on Workout because
 // "/" resolves to (start)/index.
 export default function TabLayout() {
   return (
@@ -9,6 +9,7 @@ export default function TabLayout() {
       <PagerTabs.Screen name="history" />
       <PagerTabs.Screen name="(start)" />
       <PagerTabs.Screen name="exercises" />
+      <PagerTabs.Screen name="challenges" />
     </PagerTabs>
   );
 }

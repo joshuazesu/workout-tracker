@@ -181,6 +181,9 @@ export function ChallengeCard() {
 
   return (
     <Section title={p.title} trailing={`${p.daysLeft} ${p.daysLeft === 1 ? 'day' : 'days'} left`} padded>
+      <ThemedText type="subheadline" themeColor="textSecondary">
+        {p.blurb}
+      </ThemedText>
       <DayBoxes done={p.done} total={p.days} doneToday={p.doneToday} />
     </Section>
   );

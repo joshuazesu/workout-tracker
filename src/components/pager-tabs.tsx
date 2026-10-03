@@ -1,5 +1,5 @@
 /**
- * The tab navigator: the four tab pages sit side by side and follow the finger, with a bottom bar
+ * The tab navigator: the five tab pages sit side by side and follow the finger, with a bottom bar
  * drawn to look like the native one. Each tab's colour moves with the pages, so a swipe, a tap on the
  * bar and the settle all animate the same way.
  */
@@ -8,6 +8,8 @@ import { createContext, useContext, useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import Animated, {
+  FadeIn,
+  FadeOut,
   type SharedValue,
   useAnimatedStyle,
   useDerivedValue,
@@ -21,6 +23,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { EASE_OUT } from '@/constants/motion';
+import { useTabBadges } from '@/hooks/use-tab-badges';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
 
@@ -42,7 +45,7 @@ export const TABS: { name: string; label: string; icon: IconName; selectedIcon: 
   },
   {
     name: '(start)',
-    label: 'Start Workout',
+    label: 'Workout',
     icon: { ios: 'play.circle', md: 'play_circle' },
     selectedIcon: { ios: 'play.circle.fill', md: 'play_circle' },
   },
@@ -51,6 +54,12 @@ export const TABS: { name: string; label: string; icon: IconName; selectedIcon: 
     label: 'Exercises',
     icon: { ios: 'dumbbell', md: 'fitness_center' },
     selectedIcon: { ios: 'dumbbell.fill', md: 'fitness_center' },
+  },
+  {
+    name: 'challenges',
+    label: 'Challenges',
+    icon: { ios: 'trophy', md: 'trophy' },
+    selectedIcon: { ios: 'trophy.fill', md: 'trophy' },
   },
 ];
 
@@ -152,28 +161,43 @@ function TabBar({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const badges = useTabBadges();
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom, borderTopColor: theme.separator, backgroundColor: theme.background }]}>
       <View accessibilityRole="tablist" style={styles.tabs}>
         {names.map((name, i) => (
-          <TabButton key={name} name={name} i={i} selected={i === index} progress={progress} onPress={onPress} />
+          <TabButton
+            key={name}
+            name={name}
+            i={i}
+            selected={i === index}
+            // Only while that tab isn't the one showing.
+            badge={Boolean(badges[name]) && i !== index}
+            progress={progress}
+            onPress={onPress}
+          />
         ))}
       </View>
     </View>
   );
 }
 
-/** A tab drawn twice, grey and outlined, and blue and filled; they crossfade as its page arrives. */
+/**
+ * A tab drawn twice, grey and outlined, and blue and filled; they crossfade as its page arrives.
+ * `badge` adds an accent dot on the icon's corner when that screen has something waiting.
+ */
 function TabButton({
   name,
   i,
   selected,
+  badge,
   progress,
   onPress,
 }: {
   name: string;
   i: number;
   selected: boolean;
+  badge: boolean;
   progress: SharedValue<number>;
   onPress: (name: string, selected: boolean) => void;
 }) {
@@ -183,12 +207,13 @@ function TabButton({
   const nearness = useDerivedValue(() => 1 - Math.min(1, Math.abs(progress.get() - i)));
   const active = useAnimatedStyle(() => ({ opacity: nearness.get() }));
   const idle = useAnimatedStyle(() => ({ opacity: 1 - nearness.get() }));
+  const reduceMotion = useReducedMotion();
 
   return (
     <Pressable
       accessibilityRole="tab"
       accessibilityState={{ selected }}
-      accessibilityLabel={label}
+      accessibilityLabel={badge ? `${label}, needs attention` : label}
       onPress={() => onPress(name, selected)}
       style={styles.tab}>
       <Animated.View style={[styles.tabContent, idle]}>
@@ -203,6 +228,16 @@ function TabButton({
           {label}
         </ThemedText>
       </Animated.View>
+      {/* Outside the crossfading layers, so it stays put while they fade. */}
+      {badge && (
+        <View pointerEvents="none" style={styles.badgeSlot}>
+          <Animated.View
+            entering={reduceMotion ? undefined : FadeIn.duration(150).easing(EASE_OUT)}
+            exiting={reduceMotion ? undefined : FadeOut.duration(150).easing(EASE_OUT)}
+            style={[styles.badge, { backgroundColor: theme.accentFill, borderColor: theme.background }]}
+          />
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -240,5 +275,23 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFill,
+  },
+  // A 24pt-wide box centred where the icon sits, so the dot lands on the icon's top-right corner.
+  badgeSlot: {
+    position: 'absolute',
+    top: 6,
+    left: '50%',
+    width: 24,
+    height: 24,
+    marginLeft: -12,
+  },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -5,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
+    borderWidth: 2,
   },
 });

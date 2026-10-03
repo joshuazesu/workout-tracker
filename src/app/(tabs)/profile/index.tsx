@@ -10,15 +10,15 @@ import { Section } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { WeightCard, WeightDelta } from '@/components/weight';
-import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { bmi, formatBodyWeight, formatHeight } from '@/lib/units';
-import { CHALLENGES, challengeProgress, useWorkoutStore, weekStreak } from '@/lib/workouts';
+import { useWorkoutStore, weekStreak } from '@/lib/workouts';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { profile, units, history, trophies, challenge, showBmi } = useWorkoutStore();
+  const { profile, units, history, showBmi } = useWorkoutStore();
   const now = useNow();
   const bodyMassIndex = showBmi ? bmi(profile.heightCm, profile.weightKg) : null;
   const details = [
@@ -28,9 +28,6 @@ export default function ProfileScreen() {
   ].filter(Boolean);
   const openSettings = () => router.push('/profile/settings');
   const streak = weekStreak(history, now);
-  // The trophy being worked towards, shown as a dashed "still to win" card.
-  const progress = challenge && !challenge.completedAt ? challengeProgress(challenge, history, now) : null;
-  const chasing = progress && !progress.expired ? progress : null;
   const collapse = useCollapsingTitle();
 
   return (
@@ -71,40 +68,6 @@ export default function ProfileScreen() {
         <WeightCard />
 
         <ConsistencyCard />
-
-        <Section title="Trophies" padded>
-          <View style={styles.trophies}>
-            {trophies.map((t, i) => (
-              <View
-                key={i}
-                style={[styles.trophy, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
-                <Icon name={{ ios: 'trophy.fill', md: 'trophy' }} size={28} color={theme.accent} />
-                <ThemedText type="headline" style={styles.trophyTitle}>
-                  {CHALLENGES[t.id].title}
-                </ThemedText>
-                <ThemedText type="footnote" themeColor="textSecondary">
-                  {new Date(t.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                </ThemedText>
-              </View>
-            ))}
-            {chasing && (
-              <View style={[styles.trophy, styles.locked, { borderColor: theme.outline }]}>
-                <Icon name={{ ios: 'trophy', md: 'trophy' }} size={28} color={theme.outline} />
-                <ThemedText type="headline" themeColor="textSecondary" style={styles.trophyTitle}>
-                  {chasing.title}
-                </ThemedText>
-                <ThemedText type="footnote" themeColor="textSecondary">
-                  {chasing.days - chasing.done} {chasing.days - chasing.done === 1 ? 'day' : 'days'} to go
-                </ThemedText>
-              </View>
-            )}
-          </View>
-          {trophies.length === 0 && !chasing && (
-            <ThemedText type="subheadline" themeColor="textSecondary">
-              Finish a challenge to earn your first trophy.
-            </ThemedText>
-          )}
-        </Section>
 
         <RemindersPrompt />
       </Animated.ScrollView>
@@ -153,24 +116,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'baseline',
     paddingVertical: 10,
-  },
-  trophies: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  trophy: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    borderRadius: Radius,
-    borderWidth: 1,
-    padding: Spacing.three - 2,
-    gap: Spacing.two,
-  },
-  locked: {
-    borderStyle: 'dashed',
-  },
-  trophyTitle: {
-    fontWeight: 700,
   },
 });

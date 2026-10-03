@@ -4,7 +4,6 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
-import { ChallengeCard } from '@/components/cards';
 import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
@@ -87,8 +86,6 @@ export default function StartScreen() {
         <ScreenHeader title="Today’s log" subtitle={todayLine(now)} collapse={collapse} />
 
         {active && <ResumeCard workout={active} />}
-
-        <ChallengeCard />
 
         <Section title="Templates" trailing={`${routines.length} of ${MAX_ROUTINES}`}>
           {routines.length > 0 && (
