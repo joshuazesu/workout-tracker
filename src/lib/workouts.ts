@@ -93,6 +93,8 @@ export type State = {
   appearance: Appearance;
   units: Units;
   weightColors: { gain: ChangeColor; loss: ChangeColor };
+  /** Show BMI on Profile and onboarding. */
+  showBmi: boolean;
 };
 
 /** Work out on `days` different days within `windowDays` of starting. */
@@ -153,6 +155,7 @@ const initialState = (): State => ({
   appearance: 'system',
   units: 'metric',
   weightColors: { gain: 'red', loss: 'green' },
+  showBmi: true,
 });
 
 function load(): State {
@@ -451,6 +454,9 @@ export const profileActions = {
   },
   setUnits(units: Units) {
     setState((s) => ({ ...s, units }));
+  },
+  setShowBmi(showBmi: boolean) {
+    setState((s) => ({ ...s, showBmi }));
   },
   setWeightColor(direction: 'gain' | 'loss', color: ChangeColor) {
     setState((s) => ({ ...s, weightColors: { ...s.weightColors, [direction]: color } }));

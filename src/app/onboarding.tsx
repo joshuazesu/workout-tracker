@@ -5,6 +5,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -16,7 +17,7 @@ import { Button } from '@/components/button';
 import { DayBoxes } from '@/components/cards';
 import { Icon } from '@/components/icon';
 import { Section } from '@/components/list';
-import { HeightField, NameField, UnitsChoice, WeightField } from '@/components/profile-fields';
+import { BmiField, HeightField, NameField, UnitsChoice, WeightField } from '@/components/profile-fields';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -30,7 +31,7 @@ const hasReminders = Platform.OS !== 'web';
 
 /**
  * Intro pages side by side in a horizontal pager, so they can be swiped back and forth. The
- * buttons scroll to the next page; only the last page's buttons finish onboarding.
+ * challenge buttons scroll to the next page; only the last page's buttons finish onboarding.
  */
 export default function OnboardingScreen() {
   const theme = useTheme();
@@ -39,12 +40,14 @@ export default function OnboardingScreen() {
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
   const [acceptChallenge, setAcceptChallenge] = useState(false);
-  const { profile, units } = useWorkoutStore();
+  const { profile, units, showBmi } = useWorkoutStore();
+
+  const goTo = (i: number) => pager.current?.scrollTo({ x: i * width, animated: !reduceMotion });
 
   const next = (accept = acceptChallenge) => {
     feedback.tap();
     setAcceptChallenge(accept);
-    pager.current?.scrollTo({ x: (page + 1) * width, animated: !reduceMotion });
+    goTo(page + 1);
   };
 
   const finish = async (withReminders: boolean, accept = acceptChallenge) => {
@@ -58,28 +61,26 @@ export default function OnboardingScreen() {
       icon: { ios: 'figure.strengthtraining.traditional', md: 'fitness_center' } as const,
       title: 'Log your lifts.\nBuild the habit.',
       body: 'Pick a workout, tick off each set as you go, and watch your consistency stack up.',
-      actions: <Button label="Get Started" onPress={() => next()} />,
     },
     {
       icon: { ios: 'gift', md: 'redeem' } as const,
       title: 'Every lift earns\nyou Logs',
       body: 'Spend Logs on items in the app.',
-      actions: <Button label="Continue" onPress={() => next()} />,
     },
     {
       icon: { ios: 'person.crop.circle', md: 'account_circle' } as const,
       title: 'About you',
       body: 'Fills in your profile and starts your weight log. All optional, and you can change them any time in Settings.',
-      // The fields save as you type, so Continue only moves on.
+      // The fields save as they're entered, so there's nothing to confirm; swipe on.
       extra: (
         <Section>
           <NameField profile={profile} />
           <UnitsChoice units={units} />
           <HeightField key={`height-${units}`} profile={profile} units={units} />
           <WeightField key={`weight-${units}`} profile={profile} units={units} />
+          {showBmi && <BmiField profile={profile} />}
         </Section>
       ),
-      actions: <Button label="Continue" onPress={() => next()} />,
     },
     {
       icon: { ios: 'calendar.badge.checkmark', md: 'event_available' } as const,
@@ -166,21 +167,33 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <View
-            style={styles.pager}
-            accessible
-            accessibilityLabel={`Page ${page + 1} of ${pages.length}. Swipe to go back or forward.`}>
+          {/* Same height on every page, so the dots below don't move as buttons come and go. */}
+          <View style={styles.actions}>
+            {pages[page].actions ?? (
+              <ThemedText type="footnote" themeColor="textSecondary" style={styles.hint}>
+                Swipe to continue
+              </ThemedText>
+            )}
+          </View>
+          {/* Tappable too, since a mouse on web can't swipe. */}
+          <View style={styles.pager}>
             {pages.map((_, i) => (
-              <View
+              <Pressable
                 key={i}
-                style={[
-                  styles.pagerDot,
-                  { backgroundColor: i === page ? theme.text : theme.fillStrong, width: i === page ? 20 : 8 },
-                ]}
-              />
+                onPress={() => goTo(i)}
+                accessibilityRole="button"
+                accessibilityLabel={`Page ${i + 1} of ${pages.length}`}
+                accessibilityState={{ selected: i === page }}
+                style={styles.pagerHit}>
+                <View
+                  style={[
+                    styles.pagerDot,
+                    { backgroundColor: i === page ? theme.text : theme.fillStrong, width: i === page ? 20 : 8 },
+                  ]}
+                />
+              </Pressable>
             ))}
           </View>
-          {pages[page].actions}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -214,11 +227,24 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.four,
   },
+  actions: {
+    minHeight: 52 * 2 + Spacing.two,
+    justifyContent: 'flex-end',
+    gap: Spacing.two,
+  },
+  hint: {
+    textAlign: 'center',
+    paddingBottom: Spacing.three,
+  },
   pager: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.one,
-    marginBottom: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  pagerHit: {
+    height: 28,
+    paddingHorizontal: Spacing.half,
+    justifyContent: 'center',
   },
   pagerDot: {
     height: 8,

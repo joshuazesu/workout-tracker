@@ -1,7 +1,7 @@
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
@@ -54,7 +54,7 @@ async function persistPhoto(uri: string, previous?: string): Promise<string> {
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { profile, history, appearance, units, weightColors, weights } = useWorkoutStore();
+  const { profile, history, appearance, units, weightColors, weights, showBmi } = useWorkoutStore();
   const account = useAccount();
   const [deleting, setDeleting] = useState(false);
 
@@ -96,11 +96,25 @@ export default function SettingsScreen() {
         </ThemedText>
       </Pressable>
 
-      <Section title="Details">
+      <Section title="Details" footer="BMI is worked out from your height and weight and shown on Profile.">
         <NameField profile={profile} />
         {/* Remounted when the units change, so the fields start over in the new unit. */}
         <HeightField key={`height-${units}`} profile={profile} units={units} />
         <WeightField key={`weight-${units}-${weights.length === 0}`} profile={profile} units={units} />
+        <Row
+          label="Show BMI"
+          onPress={() => profileActions.setShowBmi(!showBmi)}
+          accessibilityLabel={`Show BMI, ${showBmi ? 'on' : 'off'}`}
+          trailing={
+            <Switch
+              value={showBmi}
+              onValueChange={profileActions.setShowBmi}
+              trackColor={{ true: theme.accentFill }}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+          }
+        />
       </Section>
 
       <Section title="Units" footer="For your height and body weight. Lifting weights stay in kg.">

@@ -58,8 +58,9 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 - The root layout is wrapped in `GestureHandlerRootView` because `SwipeAction` and `SortableList` need it.
 - Reminders are local scheduled notifications (remote push isn't available in Expo Go on Android), skipped on web. `_layout.tsx` re-syncs them whenever history or the challenge changes.
 - Sounds play through `expo-audio` in `mixWithOthers` mode so the user's music keeps playing. Rewards go through `src/lib/feedback.ts` (sound + haptics together).
-- Onboarding (`onboarding.tsx`) is a horizontal paging `ScrollView`: pages can be swiped both ways, buttons scroll forward, and only the last page's buttons finish. On web there's no reminders page, so the challenge buttons finish there.
-- Sign-in `TextInput`s drop `lineHeight` (`inputText()`), because iOS clips the bottom of a TextInput's text when it's set.
+- Onboarding (`onboarding.tsx`) is a horizontal paging `ScrollView`: pages are swiped (or the dots tapped) both ways. Only the challenge and reminders pages have buttons, and only the last page's buttons finish. On web there's no reminders page, so the challenge buttons finish there.
+- Body height and weight are picked on wheels (`@react-native-picker/picker`, in Expo Go; a dropdown on Android and web) in a `BottomSheet` (`components/sheet.tsx`), via the shared fields in `components/profile-fields.tsx`. BMI is derived with `bmi()` in `units.ts`, never stored; `state.showBmi` hides it.
+- Sign-in `TextInput`s drop `lineHeight` (`inputText()`) and are `multiline`, because iOS clips a single-line TextInput's text (and the placeholder) in that font.
 - To add a catalogue exercise, add an entry in `src/constants/exercises.ts` with a static `require` for both images in `assets/exercises/`.
 
 **Routing:**

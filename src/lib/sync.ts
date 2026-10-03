@@ -102,7 +102,7 @@ export function useAccount(): Account {
 
 // --- Change tracking -----------------------------------------------------------------------
 
-const PROFILE_FIELDS = ['onboarded', 'appearance', 'units', 'weightColors', 'restSeconds', 'challenge', 'trophies'] as const;
+const PROFILE_FIELDS = ['onboarded', 'appearance', 'units', 'weightColors', 'showBmi', 'restSeconds', 'challenge', 'trophies'] as const;
 
 const workoutKey = (id: string) => `workout:${id}`;
 const routineKey = (id: string) => `routine:${id}`;
@@ -182,6 +182,7 @@ type ProfileRow = {
   appearance: State['appearance'];
   units: State['units'];
   weight_colors: State['weightColors'];
+  show_bmi: boolean;
   rest_seconds: number;
   challenge: State['challenge'];
   trophies: State['trophies'];
@@ -230,6 +231,7 @@ const profileRow = (s: State, user_id: string) => ({
   appearance: s.appearance,
   units: s.units,
   weight_colors: s.weightColors,
+  show_bmi: s.showBmi,
   rest_seconds: s.restSeconds,
   challenge: s.challenge,
   trophies: s.trophies,
@@ -414,6 +416,7 @@ function applyChanges(changes: Changes, replaceRoutines = false) {
         appearance: p.appearance,
         units: p.units,
         weightColors: p.weight_colors,
+        showBmi: p.show_bmi,
         restSeconds: p.rest_seconds,
         challenge: p.challenge,
         trophies: p.trophies,

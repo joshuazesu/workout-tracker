@@ -24,33 +24,31 @@ import { useTheme } from '@/hooks/use-theme';
 export type MenuOption = { label: string; onPress: () => void; destructive?: boolean };
 
 /**
- * Bottom action sheet. Built on RN Modal so it behaves the same on iOS, Android and web. It slides
- * up from the bottom edge and leaves the same way, while the scrim fades.
+ * The slide-up shell shared by the bottom sheets. Built on RN Modal so it behaves the same on iOS,
+ * Android and web. It slides up from the bottom edge and leaves the same way, while the scrim
+ * fades. It stays mounted until it has slid out, so callers should keep `children` the same while
+ * it closes.
  */
-export function ActionMenu({
-  title,
-  options,
+export function BottomSheet({
+  open,
   onClose,
+  closeLabel = 'Close',
+  children,
 }: {
-  title?: string;
-  options: MenuOption[] | null;
+  open: boolean;
   onClose: () => void;
+  /** Accessibility label for the scrim, which closes the sheet when tapped. */
+  closeLabel?: string;
+  children: React.ReactNode;
 }) {
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
-  // What's on screen lags `options` by the slide-out, so the sheet keeps its content while it leaves.
-  const [shown, setShown] = useState(options);
-  const [shownTitle, setShownTitle] = useState(title);
-  if (options && (options !== shown || title !== shownTitle)) {
-    setShown(options);
-    setShownTitle(title);
-  }
+  const [mounted, setMounted] = useState(open);
+  if (open && !mounted) setMounted(true);
 
   // 0 = off screen, 1 = up. Reduce Motion keeps the timing but swaps the slide for a fade. The sheet's height is measured; until then it sits well below the screen.
   const progress = useSharedValue(0);
   const height = useSharedValue(1000);
-  const open = options !== null;
   useEffect(() => {
     if (open) {
       progress.set(withTiming(1, { duration: 300, easing: EASE_SHEET, reduceMotion: ReduceMotion.Never }));
@@ -58,7 +56,7 @@ export function ActionMenu({
       // Leaves the way it came, a little quicker, then the modal goes.
       progress.set(
         withTiming(0, { duration: 200, easing: EASE_SHEET, reduceMotion: ReduceMotion.Never }, (finished) => {
-          if (finished) scheduleOnRN(setShown, null);
+          if (finished) scheduleOnRN(setMounted, false);
         })
       );
     }
@@ -72,54 +70,80 @@ export function ActionMenu({
   );
 
   return (
-    <Modal visible={shown !== null} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.sheetContainer} pointerEvents={open ? 'auto' : 'none'}>
         <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, backdropStyle]}>
           {/* Sibling, not parent, of the sheet so taps on the sheet's padding don't dismiss it. */}
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" />
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={closeLabel} />
         </Animated.View>
         <Animated.View
           onLayout={(e) => height.set(e.nativeEvent.layout.height + insets.bottom)}
           style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.two }, sheetStyle]}>
-          <View style={[styles.group, { backgroundColor: theme.surface }]}>
-            {shownTitle && (
-              <ThemedText type="footnote" themeColor="textSecondary" style={styles.title}>
-                {shownTitle}
-              </ThemedText>
-            )}
-            {shown?.map((o, i) => (
-              <View key={o.label}>
-                {(i > 0 || shownTitle) && <View style={[styles.divider, { backgroundColor: theme.separator }]} />}
-                <Pressable
-                  onPress={() => {
-                    onClose();
-                    // iOS can't present a screen or alert while this modal is still sliding out.
-                    setTimeout(o.onPress, 300);
-                  }}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.option, pressed && { backgroundColor: theme.fillStrong }]}>
-                  <ThemedText style={[styles.optionText, { color: o.destructive ? theme.destructive : theme.accent }]}>
-                    {o.label}
-                  </ThemedText>
-                </Pressable>
-              </View>
-            ))}
-          </View>
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.group,
-              styles.option,
-              { backgroundColor: pressed ? theme.fillStrong : theme.surface },
-            ]}>
-            <ThemedText type="headline" style={[styles.optionText, { color: theme.accent }]}>
-              Cancel
-            </ThemedText>
-          </Pressable>
+          {children}
         </Animated.View>
       </View>
     </Modal>
+  );
+}
+
+/** Bottom action sheet: a list of options and a Cancel button. */
+export function ActionMenu({
+  title,
+  options,
+  onClose,
+}: {
+  title?: string;
+  options: MenuOption[] | null;
+  onClose: () => void;
+}) {
+  const theme = useTheme();
+  // What's on screen lags `options` by the slide-out, so the sheet keeps its content while it leaves.
+  const [shown, setShown] = useState(options);
+  const [shownTitle, setShownTitle] = useState(title);
+  if (options && (options !== shown || title !== shownTitle)) {
+    setShown(options);
+    setShownTitle(title);
+  }
+
+  return (
+    <BottomSheet open={options !== null} onClose={onClose} closeLabel="Close menu">
+      <View style={[styles.group, { backgroundColor: theme.surface }]}>
+        {shownTitle && (
+          <ThemedText type="footnote" themeColor="textSecondary" style={styles.title}>
+            {shownTitle}
+          </ThemedText>
+        )}
+        {shown?.map((o, i) => (
+          <View key={o.label}>
+            {(i > 0 || shownTitle) && <View style={[styles.divider, { backgroundColor: theme.separator }]} />}
+            <Pressable
+              onPress={() => {
+                onClose();
+                // iOS can't present a screen or alert while this modal is still sliding out.
+                setTimeout(o.onPress, 300);
+              }}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.option, pressed && { backgroundColor: theme.fillStrong }]}>
+              <ThemedText style={[styles.optionText, { color: o.destructive ? theme.destructive : theme.accent }]}>
+                {o.label}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ))}
+      </View>
+      <Pressable
+        onPress={onClose}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.group,
+          styles.option,
+          { backgroundColor: pressed ? theme.fillStrong : theme.surface },
+        ]}>
+        <ThemedText type="headline" style={[styles.optionText, { color: theme.accent }]}>
+          Cancel
+        </ThemedText>
+      </Pressable>
+    </BottomSheet>
   );
 }
 

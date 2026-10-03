@@ -151,7 +151,11 @@ export default function SignInScreen() {
       field: (
         <TextInput
           value={code}
+          // Multiline like the email field: iOS draws a single-line placeholder in this font too high.
           onChangeText={(v) => setCode(v.replace(/\D/g, ''))}
+          multiline
+          scrollEnabled={false}
+          submitBehavior="blurAndSubmit"
           placeholder="Code"
           placeholderTextColor={theme.textSecondary}
           keyboardType="number-pad"

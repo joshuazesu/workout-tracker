@@ -6,6 +6,7 @@
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/archivo-narrow": "^0.4.2",
     "@expo/ui": "~57.0.21",
+    "@react-native-picker/picker": "2.11.4",
     "@supabase/supabase-js": "^2.117.2",
     "eslint-config-expo": "~57.0.2",
     "expo": "~57.0.26",

@@ -46,3 +46,10 @@ export function formatHeight(cm: string | number, units: Units): string {
   const { ft, in: inches } = toFeetInches(n);
   return `${ft} ft ${inches} in`;
 }
+
+/** Body mass index (kg/m²) to one decimal, or null without both a height and a weight. */
+export function bmi(heightCm: string | number, weightKg: string | number): number | null {
+  const m = Number(heightCm) / 100;
+  const kg = Number(weightKg);
+  return m > 0 && kg > 0 ? oneDecimal(kg / (m * m)) : null;
+}

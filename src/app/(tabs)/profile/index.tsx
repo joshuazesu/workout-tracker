@@ -13,14 +13,19 @@ import { WeightCard, WeightDelta } from '@/components/weight';
 import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatBodyWeight, formatHeight } from '@/lib/units';
+import { bmi, formatBodyWeight, formatHeight } from '@/lib/units';
 import { CHALLENGES, challengeProgress, useWorkoutStore, weekStreak } from '@/lib/workouts';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { profile, units, history, trophies, challenge } = useWorkoutStore();
+  const { profile, units, history, trophies, challenge, showBmi } = useWorkoutStore();
   const now = useNow();
-  const details = [formatHeight(profile.heightCm, units), formatBodyWeight(profile.weightKg, units)].filter(Boolean);
+  const bodyMassIndex = showBmi ? bmi(profile.heightCm, profile.weightKg) : null;
+  const details = [
+    formatHeight(profile.heightCm, units),
+    formatBodyWeight(profile.weightKg, units),
+    bodyMassIndex !== null ? `BMI ${bodyMassIndex}` : '',
+  ].filter(Boolean);
   const openSettings = () => router.push('/profile/settings');
   const streak = weekStreak(history, now);
   // The trophy being worked towards, shown as a dashed "still to win" card.
