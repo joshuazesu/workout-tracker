@@ -24,6 +24,18 @@ npx expo-doctor          # dependency/config health check
 
 There is no test runner set up.
 
+### Which environment to use
+
+When the user asks which environment fits a task, answer from this. Dev is `workout-app-dev` (ref `cmzqukdtfgvgvaexoxei`, `npm start`), production is `workout-app` (ref `xqutywwgxtmyuznqvyfd`, `npm run start:prod`). Each keeps its own data on the phone, so switching is safe.
+
+- **Building or testing features, UI work, bug repros:** dev (`npm start`). Dev data is throwaway.
+- **Anything destructive** (sign out, delete account, reset, sync edge cases, two-device sync tests): dev. Sign both phones into the same dev account.
+- **Logging real workouts or looking at real data:** production (`npm run start:prod`). Investigate a bug seen there read-only, then reproduce it in dev.
+- **Database changes:** write a migration, apply it to dev first (`npx supabase db push --project-ref cmzqukdtfgvgvaexoxei`), test with `npm start`, then apply it to production (`npx supabase db push`) before app code that needs it runs against production. Dry-run first (`--dry-run`).
+- **Auth or email settings:** change dev first (`npx supabase config push --project-ref cmzqukdtfgvgvaexoxei`, decline the storage change). Production's auth settings were set in the dashboard, so preview a config push there (answer `n`) and expect differences beyond the change you meant.
+- **Productionising (release builds, inviting other people):** production. EAS builds need the values from `.env.production.local` (including `EXPO_PUBLIC_APP_ENV=production`) set as EAS environment variables, and production needs a verified Resend domain first. Smoke-test with `npm run start:prod` before building.
+- The Supabase CLI is linked to production, so a CLI command without `--project-ref cmzqukdtfgvgvaexoxei` (e.g. `db push`, `db query --linked`) hits production. For dev queries use `db query --linked --project-ref cmzqukdtfgvgvaexoxei`.
+
 Expo Router's typed routes (`expo-env.d.ts`, `.expo/types`) are regenerated only while the dev server runs. After adding a screen, `router.push('/new-route')` fails typechecking until `expo start` has run once.
 
 The Metro file watcher on this machine sometimes misses edits (the served bundle stays stale). If a change doesn't show up, restart `expo start` before debugging the code.
