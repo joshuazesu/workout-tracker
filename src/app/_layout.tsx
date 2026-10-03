@@ -15,11 +15,13 @@ import {
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { Appearance, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Appearance, Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { FadeOut } from 'react-native-reanimated';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { WelcomeScreen } from '@/components/welcome-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderOptions } from '@/hooks/use-header-options';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,6 +38,9 @@ export default function RootLayout() {
   const { onboarded, history, challenge, appearance } = useWorkoutStore();
   // Set once the account's data is on this phone; it stays set offline.
   const signedIn = Boolean(useAccount().userId);
+  // Someone already signed in sees the welcome screen over the app on every launch. (Signed out,
+  // the sign-in screen starts with it instead.)
+  const [welcome, setWelcome] = useState(signedIn);
   const dark = colorScheme === 'dark';
   const colors = useTheme();
   const headerOptions = useHeaderOptions();
@@ -111,7 +116,20 @@ export default function RootLayout() {
             />
           </Stack.Protected>
         </Stack>
+        {welcome && (
+          <Animated.View exiting={FadeOut.duration(250)} style={styles.welcome}>
+            <WelcomeScreen onContinue={() => setWelcome(false)} />
+          </Animated.View>
+        )}
       </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  // Above the app, below the splash overlay.
+  welcome: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 500,
+  },
+});

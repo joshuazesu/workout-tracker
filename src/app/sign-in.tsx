@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { WELCOME_SETTLED_MS, WelcomeMark } from '@/components/welcome-mark';
+import { WelcomeScreen } from '@/components/welcome-screen';
 import { MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
@@ -81,30 +81,7 @@ export default function SignInScreen() {
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.text }];
 
-  if (step === 'welcome') {
-    return (
-      <Pressable
-        onPress={() => {
-          feedback.tap();
-          setStep('email');
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="LogMyLift. Tap to continue"
-        style={styles.flex}>
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
-          <Animated.View exiting={FadeOut.duration(150)} style={[styles.body, styles.welcome]}>
-            <WelcomeMark />
-          </Animated.View>
-          {/* Only once the log has stopped and the name is in. */}
-          <Animated.View entering={FadeIn.delay(WELCOME_SETTLED_MS).duration(250)}>
-            <ThemedText type="subheadline" themeColor="textSecondary" style={styles.hint}>
-              Tap to continue
-            </ThemedText>
-          </Animated.View>
-        </SafeAreaView>
-      </Pressable>
-    );
-  }
+  if (step === 'welcome') return <WelcomeScreen onContinue={() => setStep('email')} />;
 
   const content = {
     email: {
@@ -141,14 +118,7 @@ export default function SignInScreen() {
         />
       ),
     },
-    welcome: {
-    alignItems: 'center',
-  },
-  hint: {
-    textAlign: 'center',
-    paddingBottom: Spacing.three,
-  },
-  code: {
+    code: {
       icon: { ios: 'envelope.badge', md: 'mark_email_unread' } as const,
       title: 'Check your email',
       body: `Enter the code we sent to ${email.trim()}.`,
@@ -243,13 +213,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingVertical: Spacing.two,
     borderBottomWidth: 2,
-  },
-  welcome: {
-    alignItems: 'center',
-  },
-  hint: {
-    textAlign: 'center',
-    paddingBottom: Spacing.three,
   },
   code: {
     letterSpacing: 6,

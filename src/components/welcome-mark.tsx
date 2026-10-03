@@ -26,8 +26,11 @@ const NAME_MS = 500;
 /** When the hint below can appear: once the log has stopped and the name is in. */
 export const WELCOME_SETTLED_MS = NAME_DELAY + NAME_MS + 300;
 
-/** The LogMyLift lockup: a log rolls in along the heavy rule, laying it down, and the name rises in beside it. */
-export function WelcomeMark() {
+/**
+ * The LogMyLift lockup: a log rolls in along the heavy rule, laying it down, and the name rises in beside it.
+ * `settled` cuts straight to the final frame (used when the screen is tapped before it finishes).
+ */
+export function WelcomeMark({ settled = false }: { settled?: boolean }) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
@@ -37,11 +40,16 @@ export function WelcomeMark() {
   const roll = useSharedValue(reduceMotion ? 1 : 0);
   const name = useSharedValue(reduceMotion ? 1 : 0);
 
+  // Settling assigns the final values, which cancels the running (or still delayed) animations.
   useEffect(() => {
-    if (reduceMotion) return;
-    roll.value = withTiming(1, { duration: ROLL_MS, easing: EASE_OUT });
-    name.value = withDelay(NAME_DELAY, withTiming(1, { duration: NAME_MS, easing: EASE_OUT }));
-  }, [reduceMotion, roll, name]);
+    if (settled) {
+      roll.value = 1;
+      name.value = 1;
+    } else if (!reduceMotion) {
+      roll.value = withTiming(1, { duration: ROLL_MS, easing: EASE_OUT });
+      name.value = withDelay(NAME_DELAY, withTiming(1, { duration: NAME_MS, easing: EASE_OUT }));
+    }
+  }, [settled, reduceMotion, roll, name]);
 
   // The rule ends at the log's leading edge, so the log appears to lay it down as it rolls.
   const ruleStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: roll.value }] }));
