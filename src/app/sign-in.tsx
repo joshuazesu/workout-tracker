@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,7 +11,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
 import { accountActions } from '@/lib/sync';
 
-type Step = 'email' | 'code' | 'loading';
+type Step = 'welcome' | 'email' | 'code' | 'loading';
+
+/** A text style for a TextInput. iOS clips the bottom of the text when a line height is set. */
+const inputText = (type: 'title1' | 'title3') => ({ ...textStyle(type), lineHeight: undefined });
 
 const looksLikeEmail = (v: string) => /^\S+@\S+\.\S+$/.test(v);
 
@@ -29,7 +32,7 @@ function describe(error: unknown, step: Step): string {
 
 export default function SignInScreen() {
   const theme = useTheme();
-  const [step, setStep] = useState<Step>('email');
+  const [step, setStep] = useState<Step>('welcome');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -77,6 +80,28 @@ export default function SignInScreen() {
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.text }];
 
+  if (step === 'welcome') {
+    return (
+      <Pressable
+        onPress={() => {
+          feedback.tap();
+          setStep('email');
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="LogMyLift. Tap to continue"
+        style={styles.flex}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
+          <Animated.View exiting={FadeOut.duration(150)} style={[styles.body, styles.welcome]}>
+            <ThemedText type="display">LogMyLift</ThemedText>
+          </Animated.View>
+          <ThemedText type="subheadline" themeColor="textSecondary" style={styles.hint}>
+            Tap to continue
+          </ThemedText>
+        </SafeAreaView>
+      </Pressable>
+    );
+  }
+
   const content = {
     email: {
       icon: { ios: 'person.crop.circle', md: 'account_circle' } as const,
@@ -85,7 +110,11 @@ export default function SignInScreen() {
       field: (
         <TextInput
           value={email}
-          onChangeText={setEmail}
+          // Wraps instead of scrolling sideways, so a long address stays fully in view. Return still sends.
+          onChangeText={(v) => setEmail(v.replace(/\s/g, ''))}
+          multiline
+          scrollEnabled={false}
+          submitBehavior="blurAndSubmit"
           placeholder="you@example.com"
           placeholderTextColor={theme.textSecondary}
           keyboardType="email-address"
@@ -97,7 +126,7 @@ export default function SignInScreen() {
           onSubmitEditing={() => looksLikeEmail(email.trim()) && sendCode()}
           accessibilityLabel="Email address"
           autoFocus
-          style={[inputStyle, textStyle('title3')]}
+          style={[inputStyle, inputText('title3')]}
         />
       ),
       actions: (
@@ -108,7 +137,14 @@ export default function SignInScreen() {
         />
       ),
     },
-    code: {
+    welcome: {
+    alignItems: 'center',
+  },
+  hint: {
+    textAlign: 'center',
+    paddingBottom: Spacing.three,
+  },
+  code: {
       icon: { ios: 'envelope.badge', md: 'mark_email_unread' } as const,
       title: 'Check your email',
       body: `Enter the code we sent to ${email.trim()}.`,
@@ -126,7 +162,7 @@ export default function SignInScreen() {
           onSubmitEditing={() => code.length >= 6 && verify()}
           accessibilityLabel="Sign-in code"
           autoFocus
-          style={[inputStyle, styles.code, textStyle('title1')]}
+          style={[inputStyle, styles.code, inputText('title1')]}
         />
       ),
       actions: (
@@ -199,6 +235,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingVertical: Spacing.two,
     borderBottomWidth: 2,
+  },
+  welcome: {
+    alignItems: 'center',
+  },
+  hint: {
+    textAlign: 'center',
+    paddingBottom: Spacing.three,
   },
   code: {
     letterSpacing: 6,

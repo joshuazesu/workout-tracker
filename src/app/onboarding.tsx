@@ -1,6 +1,15 @@
-import { useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import { useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -16,34 +25,46 @@ import { enableReminders } from '@/lib/reminders';
 import { CHALLENGES, useWorkoutStore, workoutActions } from '@/lib/workouts';
 
 const kickstart = CHALLENGES.kickstart;
+/** Reminders can't be scheduled on web, so the challenge page is the last one there. */
+const hasReminders = Platform.OS !== 'web';
 
+/**
+ * Intro pages side by side in a horizontal pager, so they can be swiped back and forth. The
+ * buttons scroll to the next page; only the last page's buttons finish onboarding.
+ */
 export default function OnboardingScreen() {
   const theme = useTheme();
-  const [step, setStep] = useState(0);
+  const reduceMotion = useReducedMotion();
+  const pager = useRef<ScrollView>(null);
+  const [width, setWidth] = useState(0);
+  const [page, setPage] = useState(0);
   const [acceptChallenge, setAcceptChallenge] = useState(false);
   const { profile, units } = useWorkoutStore();
 
   const next = (accept = acceptChallenge) => {
     feedback.tap();
-    Keyboard.dismiss();
     setAcceptChallenge(accept);
-    // Reminders can't be scheduled on web, so skip straight past that step there.
-    if (step === 2 && Platform.OS === 'web') workoutActions.completeOnboarding(accept);
-    else setStep(step + 1);
+    pager.current?.scrollTo({ x: (page + 1) * width, animated: !reduceMotion });
   };
 
-  const finish = async (withReminders: boolean) => {
+  const finish = async (withReminders: boolean, accept = acceptChallenge) => {
     if (withReminders) await enableReminders();
     // Flipping `onboarded` unlocks the main stack, which routes to home.
-    workoutActions.completeOnboarding(acceptChallenge);
+    workoutActions.completeOnboarding(accept);
   };
 
-  const steps = [
+  const pages = [
     {
       icon: { ios: 'figure.strengthtraining.traditional', md: 'fitness_center' } as const,
-      title: 'Log every set.\nBuild the habit.',
+      title: 'Log your lifts.\nBuild the habit.',
       body: 'Pick a workout, tick off each set as you go, and watch your consistency stack up.',
       actions: <Button label="Get Started" onPress={() => next()} />,
+    },
+    {
+      icon: { ios: 'gift', md: 'redeem' } as const,
+      title: 'Every lift earns\nyou Logs',
+      body: 'Spend Logs on items in the app.',
+      actions: <Button label="Continue" onPress={() => next()} />,
     },
     {
       icon: { ios: 'person.crop.circle', md: 'account_circle' } as const,
@@ -67,64 +88,99 @@ export default function OnboardingScreen() {
       extra: <DayBoxes done={0} total={kickstart.days} doneToday={false} />,
       actions: (
         <>
-          <Button label="I’m In" onPress={() => next(true)} />
-          <Button label="Maybe Later" variant="plain" onPress={() => next(false)} />
+          <Button label="I’m In" onPress={() => (hasReminders ? next(true) : finish(false, true))} />
+          <Button
+            label="Maybe Later"
+            variant="plain"
+            onPress={() => (hasReminders ? next(false) : finish(false, false))}
+          />
         </>
       ),
     },
-    {
-      icon: { ios: 'bell.badge', md: 'notifications_active' } as const,
-      title: 'Want a nudge?',
-      body: acceptChallenge
-        ? 'We’ll check in each evening until your challenge is done, and give you a nudge if a week goes by without a workout.'
-        : 'We’ll give you a nudge if you go a few days without a workout. No spam, just a push when you need it.',
-      actions: (
-        <>
-          <Button label="Turn On Reminders" onPress={() => finish(true)} />
-          <Button label="Not Now" variant="plain" onPress={() => finish(false)} />
-        </>
-      ),
-    },
+    ...(!hasReminders
+      ? []
+      : [
+          {
+            icon: { ios: 'bell.badge', md: 'notifications_active' } as const,
+            title: 'Want a nudge?',
+            body: acceptChallenge
+              ? 'We’ll check in each evening until your challenge is done, and give you a nudge if a week goes by without a workout.'
+              : 'We’ll give you a nudge if you go a few days without a workout. No spam, just a push when you need it.',
+            actions: (
+              <>
+                <Button label="Turn On Reminders" onPress={() => finish(true)} />
+                <Button label="Not Now" variant="plain" onPress={() => finish(false)} />
+              </>
+            ),
+          },
+        ]),
   ];
-  // Web skips the reminders step, so it shouldn't show a dot for it.
-  const stepCount = Platform.OS === 'web' ? steps.length - 1 : steps.length;
-  const current = steps[step];
+
+  // Follows the finger, so the dots and buttons switch as soon as a page is mostly in view.
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!width) return;
+    const current = Math.min(pages.length - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / width)));
+    if (current !== page) {
+      setPage(current);
+      Keyboard.dismiss();
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundPlain }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.scroll}
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <Animated.View
-            key={step}
-            entering={FadeInDown.duration(350)}
-            exiting={FadeOut.duration(150)}
-            style={styles.body}>
-            <Icon name={current.icon} size={56} color={theme.accent} />
-            <ThemedText type="largeTitle">{current.title}</ThemedText>
-            <ThemedText type="body" themeColor="textSecondary">
-              {current.body}
-            </ThemedText>
-            {current.extra}
-          </Animated.View>
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w === width) return;
+            setWidth(w);
+            // Keep the same page in view after a resize.
+            pager.current?.scrollTo({ x: page * w, animated: false });
+          }}
+          style={styles.flex}>
+          {width > 0 &&
+            pages.map((p, i) => (
+              <ScrollView
+                key={i}
+                style={{ width }}
+                contentContainerStyle={styles.page}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}>
+                <View style={styles.body}>
+                  <Icon name={p.icon} size={56} color={theme.accent} />
+                  <ThemedText type="largeTitle">{p.title}</ThemedText>
+                  <ThemedText type="body" themeColor="textSecondary">
+                    {p.body}
+                  </ThemedText>
+                  {p.extra}
+                </View>
+              </ScrollView>
+            ))}
         </ScrollView>
 
         <View style={styles.footer}>
-          <View style={styles.pager}>
-            {steps.slice(0, stepCount).map((_, i) => (
+          <View
+            style={styles.pager}
+            accessible
+            accessibilityLabel={`Page ${page + 1} of ${pages.length}. Swipe to go back or forward.`}>
+            {pages.map((_, i) => (
               <View
                 key={i}
                 style={[
                   styles.pagerDot,
-                  { backgroundColor: i === step ? theme.text : theme.fillStrong, width: i === step ? 20 : 8 },
+                  { backgroundColor: i === page ? theme.text : theme.fillStrong, width: i === page ? 20 : 8 },
                 ]}
               />
             ))}
           </View>
-          {current.actions}
+          {pages[page].actions}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -134,14 +190,15 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: Spacing.four,
+    paddingVertical: Spacing.four,
   },
   flex: {
     flex: 1,
   },
-  scroll: {
+  page: {
     flexGrow: 1,
     justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
   body: {
@@ -155,6 +212,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
+    paddingHorizontal: Spacing.four,
   },
   pager: {
     flexDirection: 'row',

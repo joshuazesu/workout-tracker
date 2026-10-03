@@ -58,6 +58,8 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 - The root layout is wrapped in `GestureHandlerRootView` because `SwipeAction` and `SortableList` need it.
 - Reminders are local scheduled notifications (remote push isn't available in Expo Go on Android), skipped on web. `_layout.tsx` re-syncs them whenever history or the challenge changes.
 - Sounds play through `expo-audio` in `mixWithOthers` mode so the user's music keeps playing. Rewards go through `src/lib/feedback.ts` (sound + haptics together).
+- Onboarding (`onboarding.tsx`) is a horizontal paging `ScrollView`: pages can be swiped both ways, buttons scroll forward, and only the last page's buttons finish. On web there's no reminders page, so the challenge buttons finish there.
+- Sign-in `TextInput`s drop `lineHeight` (`inputText()`), because iOS clips the bottom of a TextInput's text when it's set.
 - To add a catalogue exercise, add an entry in `src/constants/exercises.ts` with a static `require` for both images in `assets/exercises/`.
 
 **Routing:**
