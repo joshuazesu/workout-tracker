@@ -10,7 +10,6 @@ import { Section } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { WeightCard, WeightDelta } from '@/components/weight';
-import { TabSwipe } from '@/components/tab-swipe';
 import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -35,7 +34,7 @@ export default function ProfileScreen() {
   const collapse = useCollapsingTitle();
 
   return (
-    <TabSwipe tab="profile">
+    <>
       <Animated.ScrollView
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
@@ -110,7 +109,7 @@ export default function ProfileScreen() {
         <RemindersPrompt />
       </Animated.ScrollView>
       <CompactTitle title={profile.name || 'Profile'} collapse={collapse} />
-    </TabSwipe>
+    </>
   );
 }
 

@@ -1,14 +1,16 @@
 /**
- * v2 tab style (dev switch, Settings › Developer): the tab pages sit side by side and follow the
- * finger, with a bottom bar drawn to look like the native one. A prototype to compare against the
- * native tab bar (v1); delete whichever loses.
+ * The tab navigator: the four tab pages sit side by side and follow the finger, with a bottom bar
+ * drawn to look like the native one. Its highlight and colours move with the pages, so a swipe, a
+ * tap on the bar and the settle all animate the same way.
  */
 import { type NavigatorContentProps, TabRouter, unstable_createStandardRouterNavigator } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import Animated, {
+  type SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useReducedMotion,
   useSharedValue,
   withTiming,
@@ -17,28 +19,67 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Icon } from '@/components/icon';
-import { PageGestureProvider, TABS } from '@/components/tab-swipe';
 import { ThemedText } from '@/components/themed-text';
 import { EASE_OUT } from '@/constants/motion';
 import { useTheme } from '@/hooks/use-theme';
 import { feedback } from '@/lib/feedback';
+
+type IconName = Parameters<typeof Icon>[0]['name'];
+
+/** The tabs, left to right. */
+export const TABS: { name: string; label: string; icon: IconName; selectedIcon: IconName }[] = [
+  {
+    name: 'profile',
+    label: 'Profile',
+    icon: { ios: 'person.crop.circle', md: 'person' },
+    selectedIcon: { ios: 'person.crop.circle.fill', md: 'person' },
+  },
+  {
+    name: 'history',
+    label: 'History',
+    icon: { ios: 'clock.arrow.circlepath', md: 'history' },
+    selectedIcon: { ios: 'clock.arrow.circlepath', md: 'history' },
+  },
+  {
+    name: '(start)',
+    label: 'Start Workout',
+    icon: { ios: 'play.circle', md: 'play_circle' },
+    selectedIcon: { ios: 'play.circle.fill', md: 'play_circle' },
+  },
+  {
+    name: 'exercises',
+    label: 'Exercises',
+    icon: { ios: 'dumbbell', md: 'fitness_center' },
+    selectedIcon: { ios: 'dumbbell.fill', md: 'fitness_center' },
+  },
+];
+
+/**
+ * The gesture that swipes between tabs. Rows with their own swipe (`SwipeAction`) block it, so a
+ * swipe that starts on a template or the in-progress workout opens Delete/Discard instead.
+ */
+const PageGesture = createContext<GestureType | undefined>(undefined);
+export const usePageGesture = () => useContext(PageGesture);
 
 /** How far past the first or last page the finger can pull, as a share of the drag. */
 const RUBBER = 0.3;
 /** How much a fling carries the page, in px per px/s. */
 const FLING = 0.2;
 const SETTLE_MS = 280;
+/** Space between the highlight pill and the edges of its tab. */
+const PILL_INSET = 6;
 
 function PagerContent({ state, descriptors, actions }: NavigatorContentProps<object>) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const count = state.routes.length;
   const index = state.index;
 
   const offset = useSharedValue(-index * width);
   const start = useSharedValue(0);
+  /** Which page is showing, fractional mid-swipe: 0 is the first tab. Drives the bar. */
+  const progress = useDerivedValue(() => -offset.get() / width);
 
   // A tap on the bar (or a navigate from code) slides to the page.
   useEffect(() => {
@@ -74,7 +115,7 @@ function PagerContent({ state, descriptors, actions }: NavigatorContentProps<obj
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.background }]}>
-      <PageGestureProvider value={pan}>
+      <PageGesture.Provider value={pan}>
         <GestureDetector gesture={pan}>
           <View style={styles.viewport}>
             <Animated.View style={[styles.row, { width: width * count }, pages]}>
@@ -86,35 +127,100 @@ function PagerContent({ state, descriptors, actions }: NavigatorContentProps<obj
             </Animated.View>
           </View>
         </GestureDetector>
-      </PageGestureProvider>
+      </PageGesture.Provider>
+      <TabBar
+        names={state.routes.map((r) => r.name)}
+        index={index}
+        progress={progress}
+        onPress={(name, selected) => {
+          if (!selected) feedback.tap();
+          actions.navigate(name);
+        }}
+      />
+    </View>
+  );
+}
 
-      <View
-        accessibilityRole="tablist"
-        style={[styles.bar, { paddingBottom: insets.bottom, borderTopColor: theme.separator, backgroundColor: theme.background }]}>
-        {state.routes.map((route, i) => {
-          const tab = TABS.find((t) => t.name === route.name);
-          const selected = i === index;
-          const color = selected ? theme.accent : theme.textSecondary;
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              accessibilityLabel={tab?.label ?? route.name}
-              onPress={() => {
-                if (!selected) feedback.tap();
-                actions.navigate(route.name);
-              }}
-              style={styles.tab}>
-              {tab && <Icon name={selected ? tab.selectedIcon : tab.icon} size={24} color={color} />}
-              <ThemedText type="caption" style={{ color }} numberOfLines={1}>
-                {tab?.label ?? route.name}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
+function TabBar({
+  names,
+  index,
+  progress,
+  onPress,
+}: {
+  names: string[];
+  index: number;
+  progress: SharedValue<number>;
+  onPress: (name: string, selected: boolean) => void;
+}) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const [barWidth, setBarWidth] = useState(0);
+  const tabWidth = barWidth / names.length;
+
+  // The pill slides under the tabs as the pages move; it stops at the ends while the page stretches.
+  const pill = useAnimatedStyle(() => {
+    const p = Math.max(0, Math.min(names.length - 1, progress.get()));
+    return { transform: [{ translateX: p * tabWidth }] };
+  });
+
+  return (
+    <View style={[styles.bar, { paddingBottom: insets.bottom, borderTopColor: theme.separator, backgroundColor: theme.background }]}>
+      <View accessibilityRole="tablist" style={styles.tabs} onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}>
+        {barWidth > 0 && (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.pill, { width: tabWidth - PILL_INSET * 2, backgroundColor: theme.accentSoft }, pill]}
+          />
+        )}
+        {names.map((name, i) => (
+          <TabButton key={name} name={name} i={i} selected={i === index} progress={progress} onPress={onPress} />
+        ))}
       </View>
     </View>
+  );
+}
+
+/** A tab drawn twice, grey and outlined, and blue and filled; they crossfade as its page arrives. */
+function TabButton({
+  name,
+  i,
+  selected,
+  progress,
+  onPress,
+}: {
+  name: string;
+  i: number;
+  selected: boolean;
+  progress: SharedValue<number>;
+  onPress: (name: string, selected: boolean) => void;
+}) {
+  const theme = useTheme();
+  const tab = TABS.find((t) => t.name === name);
+  const label = tab?.label ?? name;
+  const nearness = useDerivedValue(() => 1 - Math.min(1, Math.abs(progress.get() - i)));
+  const active = useAnimatedStyle(() => ({ opacity: nearness.get() }));
+  const idle = useAnimatedStyle(() => ({ opacity: 1 - nearness.get() }));
+
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+      onPress={() => onPress(name, selected)}
+      style={styles.tab}>
+      <Animated.View style={[styles.tabContent, idle]}>
+        {tab && <Icon name={tab.icon} size={24} color={theme.textSecondary} />}
+        <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+          {label}
+        </ThemedText>
+      </Animated.View>
+      <Animated.View style={[styles.tabContent, styles.overlay, active]}>
+        {tab && <Icon name={tab.selectedIcon} size={24} color={theme.accent} />}
+        <ThemedText type="caption" themeColor="accent" numberOfLines={1}>
+          {label}
+        </ThemedText>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -133,15 +239,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bar: {
-    flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  tabs: {
+    flexDirection: 'row',
+  },
+  pill: {
+    position: 'absolute',
+    left: PILL_INSET,
+    top: 4,
+    bottom: 4,
+    borderRadius: 999,
   },
   tab: {
     flex: 1,
+    minHeight: 52,
+  },
+  tabContent: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
-    paddingTop: 8,
-    paddingBottom: 4,
-    minHeight: 49,
+    paddingVertical: 6,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFill,
   },
 });

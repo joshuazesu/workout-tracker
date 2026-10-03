@@ -12,7 +12,6 @@ import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
-import { setTabStyle, type TabStyle, useTabStyle } from '@/lib/dev-settings';
 import { accountActions, type Account, useAccount } from '@/lib/sync';
 import {
   type Appearance,
@@ -27,11 +26,6 @@ const APPEARANCES: { value: Appearance; label: string }[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-];
-
-const TAB_STYLES: { value: TabStyle; label: string; detail: string }[] = [
-  { value: 'v1', label: 'v1 · Native tab bar', detail: 'Swipe switches tab when you lift your finger' },
-  { value: 'v2', label: 'v2 · Pages follow your finger', detail: 'Custom bottom bar' },
 ];
 
 const UNITS: { value: Units; label: string; detail: string }[] = [
@@ -61,7 +55,6 @@ async function persistPhoto(uri: string, previous?: string): Promise<string> {
 export default function SettingsScreen() {
   const theme = useTheme();
   const { profile, history, appearance, units, weightColors, weights, showBmi } = useWorkoutStore();
-  const tabStyle = useTabStyle();
   const account = useAccount();
   const [deleting, setDeleting] = useState(false);
 
@@ -169,28 +162,6 @@ export default function SettingsScreen() {
           />
         ))}
       </Section>
-
-      {__DEV__ && (
-        <Section title="Developer" footer="Only in development builds. Try both tab styles on your phone.">
-          {TAB_STYLES.map((t) => (
-            <Row
-              key={t.value}
-              label={t.label}
-              detail={t.detail}
-              onPress={() => {
-                feedback.tap();
-                setTabStyle(t.value);
-              }}
-              accessibilityLabel={`${t.label}${tabStyle === t.value ? ', selected' : ''}`}
-              trailing={
-                tabStyle === t.value ? (
-                  <Icon name={{ ios: 'checkmark', md: 'check' }} size={18} color={theme.accent} weight="semibold" />
-                ) : undefined
-              }
-            />
-          ))}
-        </Section>
-      )}
 
       <Section title="Account" footer={syncStatus(account)}>
         <Row label={account.email ?? 'Signed in'} detail="Signed in with email" />

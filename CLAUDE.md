@@ -40,7 +40,7 @@ Expo Router's typed routes (`expo-env.d.ts`, `.expo/types`) are regenerated only
 
 The Metro file watcher on this machine sometimes misses edits (the served bundle stays stale). If a change doesn't show up, restart `expo start` before debugging the code.
 
-For a visual check without a phone, run `npx expo start --web` and drive it with `playwright-cli`. No Playwright browsers are installed; point it at Brave via a config with `launchOptions.executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"`. On web, native tabs render as a bar at the top. That's expected, and on a phone they're at the bottom.
+For a visual check without a phone, run `npx expo start --web` and drive it with `playwright-cli`. No Playwright browsers are installed; point it at Brave via a config with `launchOptions.executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"`.
 
 Do not run `npm run reset-project`: it's leftover from the template and moves all of `src/` and `scripts/` into `example/` (or deletes them), wiping out the app.
 
@@ -80,10 +80,9 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 
 **Routing:**
 - The root `src/app/_layout.tsx` is a native `Stack` with three `Stack.Protected` groups: `sign-in` (signed out), `onboarding` (signed in, not onboarded) and everything else, so signing in and `completeOnboarding()` route on their own.
-- Tabs use `NativeTabs` from `expo-router/unstable-native-tabs`; each tab folder has its own `Stack`. `/` resolves to `(tabs)/(start)/index`. Tab roots have no native header (hidden for `(tabs)` in both `screenOptions` and the screen, so "(tabs)" never shows); they draw `ScreenHeader` instead.
-- The user explicitly chose the current tab layout. Still prefer adding to an existing screen over adding a new one.
-- Swiping between tabs: each tab root is wrapped in `TabSwipe` (`components/tab-swipe.tsx`, tab order in `TABS`). v1 keeps `NativeTabs` and switches tab when the finger lifts (the screen leans with the finger, the next slides in from that side). Rows with their own swipe (`SwipeAction`) block the page gesture via `usePageGesture()`, so a swipe starting on a template or the in-progress card opens Delete/Discard instead.
-- Temporary: a dev-only switch (Settings › Developer, `__DEV__`, `src/lib/dev-settings.ts`, never synced) swaps in v2, `PagerTabs` (`components/pager-tabs.tsx`, built on `unstable_createStandardRouterNavigator` + `TabRouter`): pages that follow the finger with a drawn bottom bar. The user is comparing the two; delete the loser (and the switch) once they pick.
+- Tabs are `PagerTabs` (`components/pager-tabs.tsx`, built on `unstable_createStandardRouterNavigator` + `TabRouter`, tab order and icons in `TABS`): the four tab pages sit side by side and follow the finger (one page per swipe), with a bottom bar drawn to look like the native one; its highlight pill and the blue/grey crossfade are driven by the page offset, so swipes, taps and the settle all animate together. Each tab folder has its own `Stack`. `/` resolves to `(tabs)/(start)/index`. Tab roots have no native header (hidden for `(tabs)` in both `screenOptions` and the screen, so "(tabs)" never shows); they draw `ScreenHeader` instead.
+- The user explicitly chose the tab order and the swipeable pager over the native tab bar (which can't follow a finger). Still prefer adding to an existing screen over adding a new one.
+- Swipe rows vs the pager (`SwipeAction`, `usePageGesture()`): a guard pan that only activates on leftward drags blocks the pager, so a left swipe starting on a template or the in-progress card opens Delete/Discard; a closed row ignores rightward drags (`dragOffsetFromLeftEdge` 10000), so a right swipe there still goes to the previous tab, and an open row closes on a right swipe.
 - Per-screen header buttons are set with `<Stack.Screen options={...}>` inside the screen. Pushed screens and modals use `useHeaderOptions()`.
 - Only route files belong in `src/app/`.
 
