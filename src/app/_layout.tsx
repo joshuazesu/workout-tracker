@@ -20,9 +20,9 @@ import { Appearance, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderOptions } from '@/hooks/use-header-options';
+import { useTheme } from '@/hooks/use-theme';
 import { preloadSounds } from '@/lib/feedback';
 import { syncReminders } from '@/lib/reminders';
 import { useAccount } from '@/lib/sync';
@@ -37,7 +37,7 @@ export default function RootLayout() {
   // Set once the account's data is on this phone; it stays set offline.
   const signedIn = Boolean(useAccount().userId);
   const dark = colorScheme === 'dark';
-  const colors = Colors[dark ? 'dark' : 'light'];
+  const colors = useTheme();
   const headerOptions = useHeaderOptions();
   const [fontsLoaded, fontError] = useFonts({
     Archivo_400Regular,

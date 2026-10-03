@@ -1,15 +1,18 @@
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { ColorWheelSheet, HueWheel } from '@/components/color-wheel';
 import { Icon } from '@/components/icon';
 import { Row, Section } from '@/components/list';
 import { HeightField, NameField, WeightField } from '@/components/profile-fields';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { ACCENT_PRESETS, accentTokens } from '@/lib/accent';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
 import { accountActions, type Account, useAccount } from '@/lib/sync';
@@ -54,7 +57,7 @@ async function persistPhoto(uri: string, previous?: string): Promise<string> {
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { profile, history, appearance, units, weightColors, weights, showBmi } = useWorkoutStore();
+  const { profile, history, appearance, units, weightColors, weights, showBmi, accent } = useWorkoutStore();
   const account = useAccount();
   const [deleting, setDeleting] = useState(false);
 
@@ -163,6 +166,10 @@ export default function SettingsScreen() {
         ))}
       </Section>
 
+      <Section title="Accent colour" footer="Used for buttons, progress and highlights." padded>
+        <AccentChoice accent={accent} />
+      </Section>
+
       <Section title="Account" footer={syncStatus(account)}>
         <Row label={account.email ?? 'Signed in'} detail="Signed in with email" />
         <Row
@@ -226,6 +233,78 @@ function syncStatus({ pending, syncing, failed }: Account): string {
   if (pending === 0) return syncing ? 'Checking for changes…' : 'Everything is backed up to your account.';
   const changes = `${pending} ${pending === 1 ? 'change' : 'changes'}`;
   return failed ? `${changes} waiting to upload. They’ll go up when you’re back online.` : `Uploading ${changes}…`;
+}
+
+const SWATCH = 36;
+
+/** Default blue, the presets, and Custom (the colour wheel), as round swatches. */
+function AccentChoice({ accent }: { accent: string | null }) {
+  const theme = useTheme();
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const [picking, setPicking] = useState(false);
+  const isPreset = accent === null || ACCENT_PRESETS.some((p) => p.hex === accent);
+  const custom = isPreset ? null : accent;
+
+  const choose = (hex: string | null) => {
+    feedback.tap();
+    profileActions.setAccent(hex);
+  };
+  const options = [
+    { name: 'Default blue', hex: null, fill: Colors[scheme].accentFill },
+    ...ACCENT_PRESETS.map((p) => ({ name: p.name, hex: p.hex, fill: accentTokens(p.hex, scheme).accentFill })),
+  ];
+
+  return (
+    <View style={styles.swatches} accessibilityRole="radiogroup" accessibilityLabel="Accent colour">
+      {options.map((o) => (
+        <Swatch key={o.name} label={o.name} selected={accent === o.hex} onPress={() => choose(o.hex)}>
+          <View style={[styles.swatchFill, { backgroundColor: o.fill }]} />
+        </Swatch>
+      ))}
+      <Swatch label={custom ? `Custom, ${custom}` : 'Custom'} selected={custom !== null} onPress={() => setPicking(true)}>
+        <HueWheel size={SWATCH} slices={36} />
+        {custom && (
+          <View
+            style={[styles.customDot, { backgroundColor: accentTokens(custom, scheme).accentFill, borderColor: theme.background }]}
+          />
+        )}
+      </Swatch>
+      <ColorWheelSheet
+        open={picking}
+        initial={accent ?? Colors.light.accent}
+        onClose={() => setPicking(false)}
+        onDone={(hex) => {
+          setPicking(false);
+          choose(hex);
+        }}
+      />
+    </View>
+  );
+}
+
+function Swatch({
+  label,
+  selected,
+  onPress,
+  children,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={label}
+      hitSlop={4}
+      style={[styles.swatch, { borderColor: selected ? theme.text : 'transparent' }]}>
+      {children}
+    </Pressable>
+  );
 }
 
 /** A row of three pills (Green, Red, Neutral), each with a dot of its colour. */
@@ -312,6 +391,31 @@ const styles = StyleSheet.create({
   },
   choiceSelected: {
     fontWeight: 600,
+  },
+  swatches: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  swatch: {
+    width: SWATCH + 8,
+    height: SWATCH + 8,
+    borderRadius: (SWATCH + 8) / 2,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchFill: {
+    width: SWATCH,
+    height: SWATCH,
+    borderRadius: SWATCH / 2,
+  },
+  customDot: {
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
   },
   dot: {
     width: 10,

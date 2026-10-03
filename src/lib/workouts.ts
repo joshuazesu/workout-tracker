@@ -96,6 +96,8 @@ export type State = {
   weightColors: { gain: ChangeColor; loss: ChangeColor };
   /** Show BMI on Profile and onboarding. */
   showBmi: boolean;
+  /** The tint as `#RRGGBB`, or null for the default blue. `useTheme()` derives the tokens from it. */
+  accent: string | null;
 };
 
 /** Work out on `days` different days within `windowDays` of starting. */
@@ -157,6 +159,7 @@ const initialState = (): State => ({
   units: 'metric',
   weightColors: { gain: 'red', loss: 'green' },
   showBmi: true,
+  accent: null,
 });
 
 function load(): State {
@@ -458,6 +461,9 @@ export const profileActions = {
   },
   setShowBmi(showBmi: boolean) {
     setState((s) => ({ ...s, showBmi }));
+  },
+  setAccent(accent: string | null) {
+    setState((s) => ({ ...s, accent }));
   },
   setWeightColor(direction: 'gain' | 'loss', color: ChangeColor) {
     setState((s) => ({ ...s, weightColors: { ...s.weightColors, [direction]: color } }));

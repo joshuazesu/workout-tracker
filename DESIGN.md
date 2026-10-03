@@ -138,6 +138,7 @@ It's a mix of three explored directions. The overall ledger is from "Logbook". T
 ### Primary
 - **Logbook Blue** (#0B5FD6 light / #4C95FF dark): text, icons and outlines in the tint. The rest band, primary pills and the template play buttons use **Blue Fill** (#0B5FD6 / #1F6FEB), which keeps white text at 4.6:1 or better.
 - **Blue Mid** (#7FA9EA / #2D6FD6): the middle step of the habit grid (one workout that day).
+- Blue is the default tint. Settings → Accent colour lets the user swap it for one of 8 presets or any colour from a wheel. `accentTokens()` (`src/lib/accent.ts`) darkens or lightens the picked colour per scheme so the tint keeps 4.5:1 on the page and the fill keeps 4.5:1 behind white text. Wherever this file says blue, read "the tint".
 
 ### Neutral
 - **Ink** (#0E1116 / #F1F3F6): text, the heavy rules under headers and section titles, ticked boxes, the Finish pill.

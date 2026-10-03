@@ -2,7 +2,9 @@
  * "Logbook": a training ledger. Screens are plain paper (white, or near-black in dark mode) with ink
  * rules instead of cards; Archivo for text and Archivo Narrow for the big condensed headings and
  * numbers. `accent` (blue) is the single tint: keep it for primary actions, progress and records.
- * Anything filled with the tint and carrying text uses `accentFill`.
+ * Anything filled with the tint and carrying text uses `accentFill`. Blue is only the default: the
+ * user can pick another tint in Settings, and `useTheme()` swaps all four accent tokens for it, so
+ * read colours through `useTheme()`, never `Colors[...]`.
  */
 
 import '@/global.css';
