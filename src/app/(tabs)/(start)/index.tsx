@@ -12,6 +12,7 @@ import { ActionMenu, type MenuOption, PromptDialog } from '@/components/sheet';
 import { SortableList } from '@/components/sortable-list';
 import { SwipeAction } from '@/components/swipe-action';
 import { ThemedText } from '@/components/themed-text';
+import { TabSwipe } from '@/components/tab-swipe';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -76,7 +77,7 @@ export default function StartScreen() {
   ];
 
   return (
-    <>
+    <TabSwipe tab="(start)">
       <Animated.ScrollView
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
@@ -137,7 +138,7 @@ export default function StartScreen() {
         onSubmit={(name) => renaming && routineActions.renameSaved(renaming.id, name)}
         onClose={() => setRenaming(null)}
       />
-    </>
+    </TabSwipe>
   );
 }
 

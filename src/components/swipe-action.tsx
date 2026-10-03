@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { Icon } from '@/components/icon';
+import { usePageGesture } from '@/components/tab-swipe';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -10,7 +11,8 @@ type IconName = Parameters<typeof Icon>[0]['name'];
 
 /**
  * Swipe left to reveal one red action, like iOS Mail. The action only runs on tap, and screen readers
- * get it as an accessibility action. Callers confirm anything that loses work.
+ * get it as an accessibility action. Callers confirm anything that loses work. On a tab's main screen
+ * the row's swipe wins over swiping between tabs.
  */
 export function SwipeAction({
   label,
@@ -31,8 +33,10 @@ export function SwipeAction({
   children: ReactNode;
 }) {
   const theme = useTheme();
+  const pageGesture = usePageGesture();
   return (
     <ReanimatedSwipeable
+      blocksExternalGesture={pageGesture}
       friction={2}
       rightThreshold={40}
       overshootRight={false}

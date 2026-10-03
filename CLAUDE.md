@@ -82,6 +82,8 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 - The root `src/app/_layout.tsx` is a native `Stack` with three `Stack.Protected` groups: `sign-in` (signed out), `onboarding` (signed in, not onboarded) and everything else, so signing in and `completeOnboarding()` route on their own.
 - Tabs use `NativeTabs` from `expo-router/unstable-native-tabs`; each tab folder has its own `Stack`. `/` resolves to `(tabs)/(start)/index`. Tab roots have no native header (hidden for `(tabs)` in both `screenOptions` and the screen, so "(tabs)" never shows); they draw `ScreenHeader` instead.
 - The user explicitly chose the current tab layout. Still prefer adding to an existing screen over adding a new one.
+- Swiping between tabs: each tab root is wrapped in `TabSwipe` (`components/tab-swipe.tsx`, tab order in `TABS`). v1 keeps `NativeTabs` and switches tab when the finger lifts (the screen leans with the finger, the next slides in from that side). Rows with their own swipe (`SwipeAction`) block the page gesture via `usePageGesture()`, so a swipe starting on a template or the in-progress card opens Delete/Discard instead.
+- Temporary: a dev-only switch (Settings › Developer, `__DEV__`, `src/lib/dev-settings.ts`, never synced) swaps in v2, `PagerTabs` (`components/pager-tabs.tsx`, built on `unstable_createStandardRouterNavigator` + `TabRouter`): pages that follow the finger with a drawn bottom bar. The user is comparing the two; delete the loser (and the switch) once they pick.
 - Per-screen header buttons are set with `<Stack.Screen options={...}>` inside the screen. Pushed screens and modals use `useHeaderOptions()`.
 - Only route files belong in `src/app/`.
 

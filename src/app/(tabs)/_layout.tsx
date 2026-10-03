@@ -1,10 +1,24 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { PagerTabs } from '@/components/pager-tabs';
 import { useTheme } from '@/hooks/use-theme';
+import { useTabStyle } from '@/lib/dev-settings';
 
 // Order is left to right. The app opens on Start Workout because "/" resolves to (start)/index.
 export default function TabLayout() {
   const theme = useTheme();
+  const tabStyle = useTabStyle();
+  // v2 (dev switch only): pages that follow the finger. Same tabs, same order.
+  if (tabStyle === 'v2') {
+    return (
+      <PagerTabs initialRouteName="(start)">
+        <PagerTabs.Screen name="profile" />
+        <PagerTabs.Screen name="history" />
+        <PagerTabs.Screen name="(start)" />
+        <PagerTabs.Screen name="exercises" />
+      </PagerTabs>
+    );
+  }
   return (
     <NativeTabs tintColor={theme.accent}>
       <NativeTabs.Trigger name="profile">

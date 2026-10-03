@@ -8,6 +8,7 @@ import { Separator } from '@/components/list';
 import { CompactTitle, ScreenHeader, useCollapsingTitle } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { WorkoutSummary } from '@/components/workout-summary';
+import { TabSwipe } from '@/components/tab-swipe';
 import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutStore, type Workout } from '@/lib/workouts';
@@ -31,7 +32,7 @@ export default function HistoryScreen() {
   const collapse = useCollapsingTitle();
 
   return (
-    <>
+    <TabSwipe tab="history">
       <AnimatedSectionList
         sections={byMonth(history)}
         onScroll={collapse.onScroll}
@@ -84,7 +85,7 @@ export default function HistoryScreen() {
         }
       />
       <CompactTitle title="History" collapse={collapse} />
-    </>
+    </TabSwipe>
   );
 }
 

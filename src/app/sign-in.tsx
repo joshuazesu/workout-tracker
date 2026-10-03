@@ -109,7 +109,7 @@ export default function SignInScreen() {
   const content = {
     email: {
       icon: { ios: 'person.crop.circle', md: 'account_circle' } as const,
-      title: 'Sign in to\nyour logbook',
+      title: 'Sign in to\nyour Logbook',
       body: 'We’ll email you a sign-in code. New here? The same code creates your account.',
       field: (
         <TextInput
