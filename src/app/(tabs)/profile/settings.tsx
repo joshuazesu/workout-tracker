@@ -1,22 +1,21 @@
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Row, Section } from '@/components/list';
+import { HeightField, NameField, WeightField } from '@/components/profile-fields';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, MaxContentWidth, Spacing, textStyle } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { feedback } from '@/lib/feedback';
 import { accountActions, type Account, useAccount } from '@/lib/sync';
-import { fromDisplayWeight, fromFeetInches, toDisplayWeight, toFeetInches, weightUnit } from '@/lib/units';
 import {
   type Appearance,
   type ChangeColor,
-  type Profile,
   profileActions,
   type Units,
   useWorkoutStore,
@@ -39,9 +38,6 @@ const CHANGE_COLORS: { value: ChangeColor; label: string }[] = [
   { value: 'red', label: 'Red' },
   { value: 'neutral', label: 'Neutral' },
 ];
-
-/** Keeps digits and one kind of decimal point, so "80,5" types as "80.5". */
-const decimal = (v: string) => v.replace(',', '.').replace(/[^\d.]/g, '');
 
 /** Picker results live in a cache the OS can purge, so keep a copy in the documents folder. */
 async function persistPhoto(uri: string, previous?: string): Promise<string> {
@@ -88,8 +84,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const inputStyle = [styles.input, { color: theme.text }];
-
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
@@ -103,17 +97,7 @@ export default function SettingsScreen() {
       </Pressable>
 
       <Section title="Details">
-        <Field key="name" label="Name">
-          <TextInput
-            value={profile.name}
-            onChangeText={(name) => profileActions.update({ name })}
-            placeholder="Your name"
-            placeholderTextColor={theme.textSecondary}
-            autoCapitalize="words"
-            returnKeyType="done"
-            style={inputStyle}
-          />
-        </Field>
+        <NameField profile={profile} />
         {/* Remounted when the units change, so the fields start over in the new unit. */}
         <HeightField key={`height-${units}`} profile={profile} units={units} />
         <WeightField key={`weight-${units}-${weights.length === 0}`} profile={profile} units={units} />
@@ -230,90 +214,6 @@ function syncStatus({ pending, syncing, failed }: Account): string {
   return failed ? `${changes} waiting to upload. They’ll go up when you’re back online.` : `Uploading ${changes}…`;
 }
 
-/** Centimetres, or feet and inches. Always saved as cm. */
-function HeightField({ profile, units }: { profile: Profile; units: Units }) {
-  const theme = useTheme();
-  const start = Number(profile.heightCm) > 0 ? toFeetInches(Number(profile.heightCm)) : null;
-  const [ft, setFt] = useState(start ? String(start.ft) : '');
-  const [inches, setInches] = useState(start ? String(start.in) : '');
-  const inputStyle = [styles.input, { color: theme.text }];
-
-  if (units === 'metric') {
-    return (
-      <Field label="Height">
-        <TextInput
-          value={profile.heightCm}
-          onChangeText={(v) => profileActions.update({ heightCm: decimal(v) })}
-          placeholder="0"
-          placeholderTextColor={theme.textSecondary}
-          keyboardType="decimal-pad"
-          accessibilityLabel="Height in centimetres"
-          style={inputStyle}
-        />
-        <ThemedText themeColor="textSecondary">cm</ThemedText>
-      </Field>
-    );
-  }
-
-  const save = (nextFt: string, nextIn: string) => {
-    setFt(nextFt);
-    setInches(nextIn);
-    const cm = fromFeetInches(Number(nextFt) || 0, Number(nextIn) || 0);
-    profileActions.update({ heightCm: cm > 0 ? String(cm) : '' });
-  };
-  return (
-    <Field label="Height">
-      <TextInput
-        value={ft}
-        onChangeText={(v) => save(v.replace(/\D/g, ''), inches)}
-        placeholder="0"
-        placeholderTextColor={theme.textSecondary}
-        keyboardType="number-pad"
-        accessibilityLabel="Height, feet"
-        style={inputStyle}
-      />
-      <ThemedText themeColor="textSecondary">ft</ThemedText>
-      <TextInput
-        value={inches}
-        onChangeText={(v) => save(ft, v.replace(/\D/g, ''))}
-        placeholder="0"
-        placeholderTextColor={theme.textSecondary}
-        keyboardType="number-pad"
-        accessibilityLabel="Height, inches"
-        style={inputStyle}
-      />
-      <ThemedText themeColor="textSecondary">in</ThemedText>
-    </Field>
-  );
-}
-
-/** Body weight in kg or lb. Typing here logs today's reading, like "Log weight" on Profile. */
-function WeightField({ profile, units }: { profile: Profile; units: Units }) {
-  const theme = useTheme();
-  const kg = Number(profile.weightKg);
-  // Local text so a half-typed "80." isn't rewritten by the unit conversion.
-  const [text, setText] = useState(kg > 0 ? String(toDisplayWeight(kg, units)) : '');
-  return (
-    <Field label="Weight">
-      <TextInput
-        value={text}
-        onChangeText={(v) => {
-          const next = decimal(v);
-          setText(next);
-          const value = Number(next);
-          profileActions.editWeight(value > 0 ? String(fromDisplayWeight(value, units)) : next);
-        }}
-        placeholder="0"
-        placeholderTextColor={theme.textSecondary}
-        keyboardType="decimal-pad"
-        accessibilityLabel={`Weight in ${units === 'imperial' ? 'pounds' : 'kilograms'}`}
-        style={[styles.input, { color: theme.text }]}
-      />
-      <ThemedText themeColor="textSecondary">{weightUnit(units)}</ThemedText>
-    </Field>
-  );
-}
-
 /** A row of three pills (Green, Red, Neutral), each with a dot of its colour. */
 function ColorChoice({
   label,
@@ -354,15 +254,6 @@ function ColorChoice({
           );
         })}
       </View>
-    </View>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <ThemedText style={styles.fieldLabel}>{label}</ThemedText>
-      {children}
     </View>
   );
 }
@@ -412,11 +303,5 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-  },
-  input: {
-    ...textStyle('body'),
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 12,
   },
 });
