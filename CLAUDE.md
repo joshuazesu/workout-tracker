@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Pending (updated 2026-10-03):** At the start of the next session, remind the user where they left off. Done: Supabase accounts and sync (tested on the phone), account deletion, a daily `pg_cron` purge of 30-day-old tombstones, and separate dev (`workout-app-dev`) and production (`workout-app`) projects. Still to do: (1) confirm dev sign-in works on the phone (dev has its own Resend key and the code template), (2) untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds (set the production env vars in EAS). Remove this note once these are addressed or the user declines.
+> **Pending (updated 2026-10-03):** At the start of the next session, remind the user where they left off. Done: Supabase accounts and sync (tested on the phone), account deletion, a daily `pg_cron` purge of 30-day-old tombstones, and separate dev (`workout-app-dev`) and production (`workout-app`) projects. Dev sign-in is tested on the phone (dev has its own Resend key). Still to do: untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds (set the production env vars in EAS). Remove this note once these are addressed or the user declines.
 
 General Expo rules (check versioned docs before touching Expo APIs, use `npx expo install`, Expo Go limitations, EAS) live in AGENTS.md:
 
