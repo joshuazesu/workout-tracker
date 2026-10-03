@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useTapGuard } from '@/hooks/use-tap-guard';
 import { useTheme } from '@/hooks/use-theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
@@ -99,9 +100,11 @@ export function Row({
   accessibilityLabel?: string;
 }) {
   const theme = useTheme();
+  const tap = useTapGuard();
   return (
     <Pressable
-      onPress={onPress}
+      onPressIn={tap.onPressIn}
+      onPress={(e) => !tap.moved(e) && onPress?.()}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={accessibilityLabel}

@@ -103,7 +103,8 @@ function PagerContent({ state, descriptors, actions }: NavigatorContentProps<obj
     () =>
       Gesture.Pan()
         .activeOffsetX([-12, 12])
-        .failOffsetY([-12, 12])
+        // Thumbs swipe in an arc: allow some vertical drift before giving the touch to the list.
+        .failOffsetY([-20, 20])
         .onStart(() => {
           start.set(offset.get());
         })

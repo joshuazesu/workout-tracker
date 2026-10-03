@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { EASE_OUT, EASE_OUT_CSS } from '@/constants/motion';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
+import { useTapGuard } from '@/hooks/use-tap-guard';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { formatMinutes, relativeDay, summarizeSets } from '@/lib/format';
@@ -20,6 +21,7 @@ export function WorkoutSummary({ workout, initiallyOpen = false }: { workout: Wo
   const theme = useTheme();
   const now = useNow(60_000);
   const reduceMotion = useReducedMotion();
+  const tap = useTapGuard();
   const [open, setOpen] = useState(initiallyOpen);
   const started = new Date(workout.startedAt);
   const time = started.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -28,7 +30,8 @@ export function WorkoutSummary({ workout, initiallyOpen = false }: { workout: Wo
 
   return (
     <Pressable
-      onPress={() => setOpen(!open)}
+      onPressIn={tap.onPressIn}
+      onPress={(e) => !tap.moved(e) && setOpen(!open)}
       onLongPress={() =>
         confirm('Delete workout', 'This workout will be removed from your history.', 'Delete', () =>
           workoutActions.deleteFromHistory(workout.id)

@@ -7,6 +7,7 @@ import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { EXERCISE_CATALOG, type ExerciseInfo } from '@/constants/exercises';
 import { Gutter, Spacing, textStyle } from '@/constants/theme';
+import { useTapGuard } from '@/hooks/use-tap-guard';
 import { useTheme } from '@/hooks/use-theme';
 
 type Row = { name: string; info?: ExerciseInfo; custom?: boolean };
@@ -28,6 +29,7 @@ export function ExerciseList({
   headerSearch?: boolean;
 }) {
   const theme = useTheme();
+  const tap = useTapGuard();
   const [query, setQuery] = useState('');
   const nativeSearch = headerSearch && Platform.OS !== 'web';
 
@@ -107,7 +109,8 @@ export function ExerciseList({
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => onSelect(item.name)}
+            onPressIn={tap.onPressIn}
+            onPress={(e) => !tap.moved(e) && onSelect(item.name)}
             accessibilityRole="button"
             style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.fillStrong }]}>
             {item.info ? (
