@@ -1,10 +1,10 @@
 /**
  * The tab navigator: the four tab pages sit side by side and follow the finger, with a bottom bar
- * drawn to look like the native one. Its highlight and colours move with the pages, so a swipe, a
- * tap on the bar and the settle all animate the same way.
+ * drawn to look like the native one. Each tab's colour moves with the pages, so a swipe, a tap on the
+ * bar and the settle all animate the same way.
  */
 import { type NavigatorContentProps, TabRouter, unstable_createStandardRouterNavigator } from 'expo-router';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import Animated, {
@@ -66,8 +66,6 @@ const RUBBER = 0.3;
 /** How much a fling carries the page, in px per px/s. */
 const FLING = 0.2;
 const SETTLE_MS = 280;
-/** Space between the highlight pill and the edges of its tab. */
-const PILL_INSET = 6;
 
 function PagerContent({ state, descriptors, actions }: NavigatorContentProps<object>) {
   const theme = useTheme();
@@ -154,24 +152,9 @@ function TabBar({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [barWidth, setBarWidth] = useState(0);
-  const tabWidth = barWidth / names.length;
-
-  // The pill slides under the tabs as the pages move; it stops at the ends while the page stretches.
-  const pill = useAnimatedStyle(() => {
-    const p = Math.max(0, Math.min(names.length - 1, progress.get()));
-    return { transform: [{ translateX: p * tabWidth }] };
-  });
-
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom, borderTopColor: theme.separator, backgroundColor: theme.background }]}>
-      <View accessibilityRole="tablist" style={styles.tabs} onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}>
-        {barWidth > 0 && (
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.pill, { width: tabWidth - PILL_INSET * 2, backgroundColor: theme.accentSoft }, pill]}
-          />
-        )}
+      <View accessibilityRole="tablist" style={styles.tabs}>
         {names.map((name, i) => (
           <TabButton key={name} name={name} i={i} selected={i === index} progress={progress} onPress={onPress} />
         ))}
@@ -243,13 +226,6 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
-  },
-  pill: {
-    position: 'absolute',
-    left: PILL_INSET,
-    top: 4,
-    bottom: 4,
-    borderRadius: 999,
   },
   tab: {
     flex: 1,
