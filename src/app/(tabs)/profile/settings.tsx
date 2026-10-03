@@ -60,6 +60,18 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { profile, history, appearance, units, weightColors, weights } = useWorkoutStore();
   const account = useAccount();
+  const [deleting, setDeleting] = useState(false);
+
+  // On success the app locks and routes to sign-in by itself, so only failure needs handling here.
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await accountActions.deleteAccount();
+    } catch {
+      setDeleting(false);
+      Alert.alert('Couldn’t delete account', 'Check your internet connection and try again.');
+    }
+  };
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -187,6 +199,24 @@ export default function SettingsScreen() {
                 feedback.tap();
               }
             )
+          }
+        />
+      </Section>
+
+      <Section footer="Permanently deletes your account and everything in it, on every device. This can’t be undone.">
+        <Row
+          label={deleting ? 'Deleting account…' : 'Delete account'}
+          color={theme.destructive}
+          onPress={
+            deleting
+              ? undefined
+              : () =>
+                  confirm(
+                    'Delete your account?',
+                    `This permanently deletes ${account.email ?? 'your account'} with all your workouts, templates, weight readings, challenge progress and trophies, and clears this phone.`,
+                    'Delete Account',
+                    () => void deleteAccount()
+                  )
           }
         />
       </Section>

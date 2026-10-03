@@ -560,10 +560,27 @@ export const accountActions = {
     } catch {
       // Offline: the local session is still removed.
     }
-    storeSync.reset();
-    meta = emptyMeta();
-    seq = 0;
-    failed = false;
-    saveMeta();
+    clearPhone();
+  },
+  /**
+   * Deletes the account and everything in it from the server, then clears this phone. Needs a
+   * connection; throws (leaving everything as it was) if the server couldn't do it.
+   */
+  async deleteAccount() {
+    clearTimeout(timer);
+    const { error } = await supabase.rpc('delete_account');
+    if (error) throw error;
+    // The user no longer exists, so only the local session can be removed.
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    clearPhone();
   },
 };
+
+function clearPhone() {
+  clearTimeout(timer);
+  storeSync.reset();
+  meta = emptyMeta();
+  seq = 0;
+  failed = false;
+  saveMeta();
+}
