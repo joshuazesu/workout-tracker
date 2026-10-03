@@ -15,10 +15,11 @@
 import { useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
+import { storageKey } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 import { type Routine, type State, storeSync, type WeightEntry, type Workout } from '@/lib/workouts';
 
-const META_KEY = 'sync.v1';
+const META_KEY = storageKey('sync.v1');
 /** Wait for a burst of edits (typing a name) to settle before pushing. */
 const PUSH_DELAY = 1500;
 const RETRY_DELAY = 30_000;

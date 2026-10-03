@@ -3,6 +3,7 @@ import '@/lib/storage';
 import { useSyncExternalStore } from 'react';
 
 import { EXERCISE_CATALOG } from '@/constants/exercises';
+import { isDevBackend, storageKey } from '@/lib/env';
 
 export type WorkoutSet = {
   id: string;
@@ -129,7 +130,7 @@ export const EXERCISES = EXERCISE_CATALOG.map((e) => e.name);
 
 export const MAX_ROUTINES = 5;
 
-const STORAGE_KEY = 'workouts.v2';
+const STORAGE_KEY = storageKey('workouts.v2');
 const LEGACY_KEY = 'workouts.v1';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -171,7 +172,7 @@ function load(): State {
       return saved;
     }
     // v1 only had { active, history }; keep those and fill in the rest.
-    const legacy = localStorage.getItem(LEGACY_KEY);
+    const legacy = isDevBackend ? null : localStorage.getItem(LEGACY_KEY);
     if (legacy) return { ...initialState(), ...(JSON.parse(legacy) as Pick<State, 'active' | 'history'>) };
   } catch {
     // Start fresh if storage is unavailable or corrupt.

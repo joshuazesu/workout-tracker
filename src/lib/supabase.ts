@@ -8,7 +8,7 @@ const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!url || !key) {
   throw new Error(
-    'Supabase is not configured: copy .env.example to .env.local, fill in your project URL and publishable key, then restart `expo start`.'
+    'Supabase is not configured: copy .env.example to .env.development.local (and .env.production.local), fill in the project URL and publishable key, then restart `expo start`.'
   );
 }
 

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Pending (added 2026-10-02):** At the start of the next session, remind the user where they left off. Supabase accounts and sync are live and tested on their phone (email-code sign-in via Resend SMTP, first upload, sync within ~2 s, offline queue). Account deletion is done and tested. Still to do: (1) a `pg_cron` job that permanently purges rows with `deleted_at` older than 30 days, (2) separate dev and production Supabase projects, (3) untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds. Remove this note once these are addressed or the user declines.
+> **Pending (updated 2026-10-03):** At the start of the next session, remind the user where they left off. Done: Supabase accounts and sync (tested on the phone), account deletion, a daily `pg_cron` purge of 30-day-old tombstones, and separate dev (`workout-app-dev`) and production (`workout-app`) projects. Still to do: (1) push the sign-in code email template to the dev project (`npx supabase config push --project-ref cmzqukdtfgvgvaexoxei`; until then dev emails a link, not a code), (2) untested: sync between two devices. Before others can sign in: verify a domain in Resend (`onboarding@resend.dev` only delivers to the owner's email), then move to EAS builds (set the production env vars in EAS). Remove this note once these are addressed or the user declines.
 
 General Expo rules (check versioned docs before touching Expo APIs, use `npx expo install`, Expo Go limitations, EAS) live in AGENTS.md:
 
@@ -15,7 +15,8 @@ A simple Hevy-style workout tracker built with Expo SDK 57, React Native 0.86, R
 ## Commands
 
 ```bash
-npm start                # dev server; scan the QR code with Expo Go (same Wi‑Fi), or use --tunnel
+npm start                # dev server on the dev Supabase project; scan the QR code with Expo Go (same Wi‑Fi), or use --tunnel
+npm run start:prod       # same, on the production Supabase project (your real account)
 npm run lint             # ESLint (eslint-config-expo, flat config)
 npx tsc --noEmit         # typecheck
 npx expo-doctor          # dependency/config health check
@@ -40,7 +41,9 @@ Do not run `npm run reset-project`: it's leftover from the template and moves al
 **Accounts and sync** (`src/lib/sync.ts`, schema in `supabase/migrations/`): sign-in is required, by emailed code (`signInWithOtp` + `verifyOtp`; no deep links, so it works in Expo Go). The local store stays the source of truth for the UI. Every `setState` passes `(prev, next)` to `storeSync.onChange`, which diffs them by reference (updates are immutable) into pending keys (`profile`, `workout:<id>`, `routine:<id>`, `weight:<day>`), pushed 1.5 s later. Each sync pushes, then pulls rows with `updated_at` newer than the cursor (minus a minute) and applies them with `storeSync.applyRemote`, which doesn't re-queue them. A pull never overwrites a record with unpushed edits. Deletes are `deleted_at` tombstones. The in-progress workout, template draft and profile photo are not synced.
 - The app unlocks on `meta.userId` (local, so it opens offline), not on the Supabase session. `meta.owner` is whose data is on the phone: the first sign-in uploads everything to a new account, or for an existing account takes its templates, settings and profile and adds this phone's workouts and weights. Signing out clears the phone. Delete account calls the `delete_account()` RPC (a `security definer` function that deletes the `auth.users` row, cascading to every table), then clears the phone; it needs a connection.
 - A new field in `State` that should sync needs a column, a line in `profileRow`/`applyChanges` (or its own table), and a check in `changedKeys`.
-- Supabase config comes from `.env.local` (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; see `.env.example`). New tables need explicit `grant`s and RLS policies; Supabase no longer exposes them automatically.
+- Two Supabase projects: `workout-app-dev` (`.env.development.local`, used by `npm start`) and `workout-app` (`.env.production.local`, used by `npm run start:prod` and production builds); see `.env.example`. Each env file sets `EXPO_PUBLIC_APP_ENV`, and `storageKey()` (`src/lib/env.ts`) gives dev its own local keys (`workouts.v2.dev`, `sync.v1.dev`), so switching backends on one phone never mixes accounts. The CLI is linked to production: apply migrations to both (`npx supabase db push`, then `npx supabase db push --project-ref cmzqukdtfgvgvaexoxei`). New tables need explicit `grant`s and RLS policies; Supabase no longer exposes them automatically.
+- A `pg_cron` job (`purge-deleted-rows`, daily 03:00 UTC) permanently deletes tombstones older than 30 days. A phone that hasn't synced for longer keeps its copy of those records.
+- Sign-in emails use `supabase/templates/code.html` (`{{ .Token }}`), set in `config.toml`.
 
 **Invariants worth knowing:**
 - Body height and weight are always stored in cm and kg; `state.units` only changes display and entry (`src/lib/units.ts`). Pounds are saved as kg to two decimals so they read back exactly. Set weights are kg only.
