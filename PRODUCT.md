@@ -29,7 +29,7 @@ Used mid-workout on a phone, often one-handed, between sets, under gym lighting,
 - Up to 5 templates. Weights are kg only. Custom exercises are allowed and have no guide.
 - 54 bundled catalogue exercises with start/end photos (Free Exercise DB, public domain) and hand-written 4-step instructions.
 - Reminders are local notifications, not push.
-- All data is on-device (localStorage via expo-sqlite); there are no accounts or sync yet.
+- Data is saved on-device first (localStorage via expo-sqlite), then synced to the user's Supabase account in the background.
 
 ## Evidence on Hand
 

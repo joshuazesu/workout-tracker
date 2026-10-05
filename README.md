@@ -12,13 +12,14 @@ A simple Hevy-style workout tracker for iOS and Android, built with Expo, React 
 - **Feedback and reminders.** Sounds and haptics when you complete a set or workout (your music keeps playing), plus local notifications for challenge check-ins and inactivity nudges.
 - **Light and dark mode.**
 
-All data is stored on the device. There is no account or backend.
+You sign in with an account, and your workouts, templates, weight log and settings sync to [Supabase](https://supabase.com) in the background. The app still works offline: every change saves on the phone first and syncs when you're back online.
 
 ## Tech stack
 
 - [Expo](https://expo.dev) SDK 57, React Native 0.86, React 19, TypeScript
 - [Expo Router](https://docs.expo.dev/router/introduction/) with native tabs and typed routes
 - React Compiler
+- [Supabase](https://supabase.com) for accounts and sync, with Row Level Security so each user only sees their own rows
 - `expo-sqlite` (synchronous `localStorage` on native), `expo-audio`, `expo-haptics`, `expo-notifications`, `expo-image-picker`, `expo-file-system`
 
 ## Getting started
@@ -27,6 +28,7 @@ You need Node.js and the [Expo Go](https://expo.dev/go) app on your phone.
 
 ```bash
 npm install
+cp .env.example .env.development.local   # then fill in your Supabase project URL and publishable key
 npm start
 ```
 
@@ -70,3 +72,7 @@ All app state lives in a single store in `src/lib/workouts.ts`. Screens read it 
 ## Credits
 
 Exercise data and images come from the public-domain [Free Exercise DB](https://github.com/yuhonas/free-exercise-db).
+
+## License
+
+All rights reserved. The code is public to read, but it isn't licensed for reuse or redistribution.
